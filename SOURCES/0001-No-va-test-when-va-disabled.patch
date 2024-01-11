@@ -1,0 +1,27 @@
+From 3e57512bea64ae9d231441caae96037a96aef2bf Mon Sep 17 00:00:00 2001
+From: Troy Dawson <tdawson@redhat.com>
+Date: Mon, 19 Oct 2020 14:09:32 -0700
+Subject: [PATCH] No va test when va disabled
+
+---
+ tests/examples/meson.build | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/tests/examples/meson.build b/tests/examples/meson.build
+index a41fc16..a73c81d 100644
+--- a/tests/examples/meson.build
++++ b/tests/examples/meson.build
+@@ -13,7 +13,9 @@ if not get_option('opencv').disabled()
+     subdir('opencv', if_found: opencv_dep)
+ endif
+ subdir('uvch264')
+-subdir('va')
++if not get_option('va').disabled()
++    subdir('va')
++endif
+ subdir('waylandsink')
+ subdir('webrtc')
+ 
+-- 
+2.18.4
+

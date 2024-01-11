@@ -1,0 +1,239 @@
+From 3abf31c7cf5b38dc4425b79d30c8f582d325010b Mon Sep 17 00:00:00 2001
+From: Wim Taymans <wtaymans@redhat.com>
+Date: Wed, 31 Mar 2021 16:18:04 +0200
+Subject: [PATCH] vulkan: provide a custom VK_DEFINE_NON_DISPATCHABLE_HANDLE
+
+If the application did not define one yet, define our own
+VK_DEFINE_NON_DISPATCHABLE_HANDLE that is independent of the
+architecture.
+
+Vulkan, by default, provides a define that depends on the architecture,
+which causes the symbol type to be different. This causes an
+architecture dependent .gir file, which then causes multilib
+installation problems because the .gir files can't be shared.
+
+Make it possible to override the format specifier and provide
+a default one that is compatible with the default non dispatchable
+handle.
+
+Return VK_NULL_HANDLE from functions that return a non-dispatchable
+handle.
+
+Fixes #1566
+
+Part-of: <https://gitlab.freedesktop.org/gstreamer/gst-plugins-bad/-/merge_requests/2130>
+---
+ .../gst/vulkan/android/gstvkwindow_android.c   |  4 ++--
+ gst-libs/gst/vulkan/cocoa/gstvkwindow_cocoa.m  |  4 ++--
+ gst-libs/gst/vulkan/gstvkapi.h                 | 18 ++++++++++++++++++
+ gst-libs/gst/vulkan/gstvkhandle.h              |  7 ++++---
+ gst-libs/gst/vulkan/ios/gstvkwindow_ios.m      |  6 +++---
+ .../gst/vulkan/wayland/gstvkwindow_wayland.c   |  4 ++--
+ gst-libs/gst/vulkan/win32/gstvkwindow_win32.c  |  4 ++--
+ gst-libs/gst/vulkan/xcb/gstvkwindow_xcb.c      |  4 ++--
+ sys/applemedia/videotexturecache-vulkan.mm     |  4 ++--
+ 9 files changed, 37 insertions(+), 18 deletions(-)
+
+diff --git a/gst-libs/gst/vulkan/android/gstvkwindow_android.c b/gst-libs/gst/vulkan/android/gstvkwindow_android.c
+index c1bd866ac..20a1c9cbe 100644
+--- a/gst-libs/gst/vulkan/android/gstvkwindow_android.c
++++ b/gst-libs/gst/vulkan/android/gstvkwindow_android.c
+@@ -163,14 +163,14 @@ gst_vulkan_window_android_get_surface (GstVulkanWindow * window,
+   if (!window_android->CreateAndroidSurface) {
+     g_set_error_literal (error, GST_VULKAN_ERROR, VK_ERROR_FEATURE_NOT_PRESENT,
+         "Could not retrieve \"vkCreateAndroidSurfaceKHR\" function pointer");
+-    return 0;
++    return VK_NULL_HANDLE;
+   }
+ 
+   err =
+       window_android->CreateAndroidSurface (window->display->instance->instance,
+       &info, NULL, &ret);
+   if (gst_vulkan_error_to_g_error (err, error, "vkCreateAndroidSurfaceKHR") < 0)
+-    return 0;
++    return VK_NULL_HANDLE;
+ 
+   return ret;
+ }
+diff --git a/gst-libs/gst/vulkan/cocoa/gstvkwindow_cocoa.m b/gst-libs/gst/vulkan/cocoa/gstvkwindow_cocoa.m
+index f00726267..e95da1278 100644
+--- a/gst-libs/gst/vulkan/cocoa/gstvkwindow_cocoa.m
++++ b/gst-libs/gst/vulkan/cocoa/gstvkwindow_cocoa.m
+@@ -226,14 +226,14 @@ gst_vulkan_window_cocoa_get_surface (GstVulkanWindow * window, GError ** error)
+   if (!window_cocoa->CreateMacOSSurface) {
+     g_set_error_literal (error, GST_VULKAN_ERROR, VK_ERROR_FEATURE_NOT_PRESENT,
+         "Could not retrieve \"vkCreateMacOSSurfaceMVK\" function pointer");
+-    return NULL;
++    return VK_NULL_HANDLE;
+   }
+ 
+   err =
+       window_cocoa->CreateMacOSSurface (window->display->instance->instance, &info,
+       NULL, &ret);
+   if (gst_vulkan_error_to_g_error (err, error, "vkCreateMacOSSurfaceMVK") < 0)
+-    return NULL;
++    return VK_NULL_HANDLE;
+ 
+   return ret;
+ }
+diff --git a/gst-libs/gst/vulkan/gstvkapi.h b/gst-libs/gst/vulkan/gstvkapi.h
+index 9d223201f..5889a7d2e 100644
+--- a/gst-libs/gst/vulkan/gstvkapi.h
++++ b/gst-libs/gst/vulkan/gstvkapi.h
+@@ -31,6 +31,24 @@
+ #include <gst/vulkan/vulkan_fwd.h>
+ #include <gst/vulkan/vulkan-enumtypes.h>
+ 
++/**
++ * VK_DEFINE_NON_DISPATCHABLE_HANDLE:
++ *
++ * Allow applications to override the VK_DEFINE_NON_DISPATCHABLE_HANDLE
++ * but provide our own version otherwise. The default vulkan define
++ * provides a different symbol type depending on the architecture and
++ * this causes multilib problems because the generated .gir files are
++ * different.
++ *
++ * Also make sure to provide a suitable GST_VULKAN_NON_DISPATCHABLE_HANDLE_FORMAT
++ * implementation when redefining VK_DEFINE_NON_DISPATCHABLE_HANDLE.
++ *
++ * Since: 1.20
++ */
++#if !defined(VK_DEFINE_NON_DISPATCHABLE_HANDLE)
++#define VK_DEFINE_NON_DISPATCHABLE_HANDLE(object) typedef uint64_t object;
++#endif
++
+ #include <vulkan/vulkan_core.h>
+ 
+ #endif /* __GST_VULKAN_API_H__ */
+diff --git a/gst-libs/gst/vulkan/gstvkhandle.h b/gst-libs/gst/vulkan/gstvkhandle.h
+index 885b4bc71..2aa6f01f7 100644
+--- a/gst-libs/gst/vulkan/gstvkhandle.h
++++ b/gst-libs/gst/vulkan/gstvkhandle.h
+@@ -54,11 +54,12 @@ VK_DEFINE_NON_DISPATCHABLE_HANDLE(GstVulkanHandleTypedef)
+  *
+  * The printf format specifier for raw Vulkan non dispatchable handles.
+  *
++ * When redefining VK_DEFINE_NON_DISPATCHABLE_HANDLE, also make sure
++ * to redefine a suitable printf format specifier.
++ *
+  * Since: 1.18
+  */
+-#if GLIB_SIZEOF_VOID_P == 8
+-# define GST_VULKAN_NON_DISPATCHABLE_HANDLE_FORMAT "p"
+-#else
++#if !defined(GST_VULKAN_NON_DISPATCHABLE_HANDLE_FORMAT)
+ # define GST_VULKAN_NON_DISPATCHABLE_HANDLE_FORMAT G_GUINT64_FORMAT
+ #endif
+ 
+diff --git a/gst-libs/gst/vulkan/ios/gstvkwindow_ios.m b/gst-libs/gst/vulkan/ios/gstvkwindow_ios.m
+index 84fc33deb..3bc8e167d 100644
+--- a/gst-libs/gst/vulkan/ios/gstvkwindow_ios.m
++++ b/gst-libs/gst/vulkan/ios/gstvkwindow_ios.m
+@@ -203,7 +203,7 @@ gst_vulkan_window_ios_get_surface (GstVulkanWindow * window, GError ** error)
+     g_set_error_literal (error, GST_VULKAN_ERROR,
+         VK_ERROR_INITIALIZATION_FAILED,
+         "No layer to retrieve surface for. Has create_window() been called?");
+-    return 0;
++    return VK_NULL_HANDLE;
+   }
+ 
+   info.sType = VK_STRUCTURE_TYPE_IOS_SURFACE_CREATE_INFO_MVK;
+@@ -218,14 +218,14 @@ gst_vulkan_window_ios_get_surface (GstVulkanWindow * window, GError ** error)
+   if (!window_ios->CreateIOSSurface) {
+     g_set_error_literal (error, GST_VULKAN_ERROR, VK_ERROR_FEATURE_NOT_PRESENT,
+         "Could not retrieve \"vkCreateIOSSurfaceMVK\" function pointer");
+-    return 0;
++    return VK_NULL_HANDLE;
+   }
+ 
+   err =
+       window_ios->CreateIOSSurface (window->display->instance->instance, &info,
+       NULL, &ret);
+   if (gst_vulkan_error_to_g_error (err, error, "vkCreateIOSSurfaceMVK") < 0)
+-    return 0;
++    return VK_NULL_HANDLE;
+ 
+   return ret;
+ }
+diff --git a/gst-libs/gst/vulkan/wayland/gstvkwindow_wayland.c b/gst-libs/gst/vulkan/wayland/gstvkwindow_wayland.c
+index eda063de9..c55bd3f8c 100644
+--- a/gst-libs/gst/vulkan/wayland/gstvkwindow_wayland.c
++++ b/gst-libs/gst/vulkan/wayland/gstvkwindow_wayland.c
+@@ -268,14 +268,14 @@ gst_vulkan_window_wayland_get_surface (GstVulkanWindow * window,
+   if (!window_wl->CreateWaylandSurface) {
+     g_set_error_literal (error, GST_VULKAN_ERROR, VK_ERROR_FEATURE_NOT_PRESENT,
+         "Could not retrieve \"vkCreateWaylandSurfaceKHR\" function pointer");
+-    return NULL;
++    return VK_NULL_HANDLE;
+   }
+ 
+   err =
+       window_wl->CreateWaylandSurface (window->display->instance->instance,
+       &info, NULL, &ret);
+   if (gst_vulkan_error_to_g_error (err, error, "vkCreateWaylandSurfaceKHR") < 0)
+-    return NULL;
++    return VK_NULL_HANDLE;
+ 
+   return ret;
+ }
+diff --git a/gst-libs/gst/vulkan/win32/gstvkwindow_win32.c b/gst-libs/gst/vulkan/win32/gstvkwindow_win32.c
+index 57e2c663f..dd8767155 100644
+--- a/gst-libs/gst/vulkan/win32/gstvkwindow_win32.c
++++ b/gst-libs/gst/vulkan/win32/gstvkwindow_win32.c
+@@ -393,7 +393,7 @@ gst_vulkan_window_win32_get_surface (GstVulkanWindow * window, GError ** error)
+   if (!window_win32->CreateWin32Surface) {
+     g_set_error_literal (error, GST_VULKAN_ERROR, VK_ERROR_FEATURE_NOT_PRESENT,
+         "Could not retrieve \"vkCreateWin32SurfaceKHR\" function pointer");
+-    return NULL;
++    return VK_NULL_HANDLE;
+   }
+ 
+   err =
+@@ -401,7 +401,7 @@ gst_vulkan_window_win32_get_surface (GstVulkanWindow * window, GError ** error)
+       &info, NULL, &ret);
+ 
+   if (gst_vulkan_error_to_g_error (err, error, "vkCreateWin32SurfaceKHR") < 0)
+-    return NULL;
++    return VK_NULL_HANDLE;
+ 
+   return ret;
+ }
+diff --git a/gst-libs/gst/vulkan/xcb/gstvkwindow_xcb.c b/gst-libs/gst/vulkan/xcb/gstvkwindow_xcb.c
+index b0f1ab4d0..4021fe718 100644
+--- a/gst-libs/gst/vulkan/xcb/gstvkwindow_xcb.c
++++ b/gst-libs/gst/vulkan/xcb/gstvkwindow_xcb.c
+@@ -283,14 +283,14 @@ gst_vulkan_window_xcb_get_surface (GstVulkanWindow * window, GError ** error)
+   if (!window_xcb->CreateXcbSurface) {
+     g_set_error_literal (error, GST_VULKAN_ERROR, VK_ERROR_FEATURE_NOT_PRESENT,
+         "Could not retrieve \"vkCreateXcbSurfaceKHR\" function pointer");
+-    return NULL;
++    return VK_NULL_HANDLE;
+   }
+ 
+   err =
+       window_xcb->CreateXcbSurface (window->display->instance->instance, &info,
+       NULL, &ret);
+   if (gst_vulkan_error_to_g_error (err, error, "vkCreateXcbSurfaceKHR") < 0)
+-    return NULL;
++    return VK_NULL_HANDLE;
+ 
+   return ret;
+ }
+diff --git a/sys/applemedia/videotexturecache-vulkan.mm b/sys/applemedia/videotexturecache-vulkan.mm
+index ac0c1e712..6ea77d276 100644
+--- a/sys/applemedia/videotexturecache-vulkan.mm
++++ b/sys/applemedia/videotexturecache-vulkan.mm
+@@ -292,8 +292,8 @@ gst_io_surface_vulkan_memory_set_surface (GstIOSurfaceVulkanMemory * memory,
+     texture_data->texture = (__bridge_retained gpointer) texture;
+ 
+     VkResult err = vkSetMTLTextureMVK (memory->vulkan_mem.image, texture);
+-    GST_DEBUG ("bound texture %p to image %p: 0x%x", texture, memory->vulkan_mem.image,
+-        err);
++    GST_DEBUG ("bound texture %p to image %"GST_VULKAN_NON_DISPATCHABLE_HANDLE_FORMAT": 0x%x",
++               texture, memory->vulkan_mem.image, err);
+ 
+     vk_mem->user_data = texture_data;
+     vk_mem->notify = (GDestroyNotify) free_texture_wrapper;
+-- 
+2.31.1
+
