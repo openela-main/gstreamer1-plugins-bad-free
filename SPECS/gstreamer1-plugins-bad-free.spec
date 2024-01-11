@@ -13,8 +13,8 @@
 #global shortcommit %(c=%{gitcommit}; echo ${c:0:5})
 
 Name:           gstreamer1-plugins-bad-free
-Version:        1.18.4
-Release:        6%{?gitcommit:.git%{shortcommit}}%{?dist}
+Version:        1.22.1
+Release:        1%{?gitcommit:.git%{shortcommit}}%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -30,14 +30,6 @@ URL:            http://gstreamer.freedesktop.org/
 %endif
 Source0:        gst-plugins-bad-free-%{version}.tar.xz
 Source1:        gst-p-bad-cleanup.sh
-# Fix build failure with opencv disabled:
-# https://gitlab.freedesktop.org/gstreamer/gst-plugins-bad/-/issues/1406
-# https://gitlab.freedesktop.org/gstreamer/gst-plugins-bad/-/merge_requests/1570
-Patch0:         0001-examples-only-check-opencv_dep-if-option-is-not-disa.patch
-# Fix build failure with va disabled:
-Patch1:         0001-No-va-test-when-va-disabled.patch
-# upstream patches
-Patch2:         0001-vulkan-provide-a-custom-VK_DEFINE_NON_DISPATCHABLE_H.patch
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -69,8 +61,6 @@ BuildRequires:  orc-devel
 BuildRequires:  soundtouch-devel
 BuildRequires:  wavpack-devel
 BuildRequires:  opus-devel
-BuildRequires:  nettle-devel
-BuildRequires:  libgcrypt-devel
 %if 0%{?fedora} || 0%{?rhel} > 7
 BuildRequires:  wayland-devel
 BuildRequires:  wayland-protocols-devel
@@ -116,11 +106,9 @@ BuildRequires:  libxml2-devel
 BuildRequires:  game-music-emu-devel
 BuildRequires:  libkate-devel
 BuildRequires:  libmodplug-devel
-BuildRequires:  libofa-devel
 ## Plugins not ported
 #BuildRequires:  libmusicbrainz-devel
 #BuildRequires:  libtimidity-devel
-BuildRequires:  libvdpau-devel
 BuildRequires:  libva-devel
 BuildRequires:  openal-soft-devel
 ## If enabled, adds ~90 additional deps; perhaps can be moved to a
@@ -135,6 +123,12 @@ BuildRequires:  wildmidi-devel
 BuildRequires:  zbar-devel
 BuildRequires:  OpenEXR-devel
 BuildRequires:  libnice-devel
+# libldac is not built on x390x, see rhbz#1677491
+%ifnarch s390x
+BuildRequires:  pkgconfig(ldacBT-enc)
+%endif
+BuildRequires:  qrencode-devel
+BuildRequires:  json-glib-devel
 %endif
 
 %if 0%{?fedora} >= 31 || 0%{?rhel} >= 9
@@ -237,14 +231,12 @@ aren't tested well enough, or the code is not of good enough quality.
 
 %prep
 %setup -q -n gst-plugins-bad-%{version}
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
 
 %build
 %meson \
     -D package-name="Fedora GStreamer-plugins-bad package" \
     -D package-origin="http://download.fedoraproject.org" \
+    -D tests=disabled \
     %{!?with_extras:-D fbdev=disabled -D decklink=disabled } \
     %{!?with_extras:-D assrender=disabled -D bs2b=disabled } \
     %{!?with_extras:-D chromaprint=disabled -D d3dvideosink=disabled } \
@@ -252,8 +244,8 @@ aren't tested well enough, or the code is not of good enough quality.
     %{!?with_extras:-D fluidsynth=disabled -D openexr=disabled } \
     %{!?with_extras:-D curl=disabled -D curl-ssh2=disabled } \
     %{!?with_extras:-D ttml=disabled -D kate=disabled } \
-    %{!?with_extras:-D modplug=disabled -D ofa=disabled } \
-    %{!?with_extras:-D vdpau=disabled -D openal=disabled } \
+    %{!?with_extras:-D modplug=disabled } \
+    %{!?with_extras:-D openal=disabled } \
     %{!?with_extras:-D opencv=disabled -D openjpeg=disabled } \
     %{!?with_extras:-D wildmidi=disabled -D zbar=disabled } \
     %{!?with_extras:-D gme=disabled -D lv2=disabled } \
@@ -263,19 +255,27 @@ aren't tested well enough, or the code is not of good enough quality.
     %{!?with_extras:-D ladspa=disabled } \
     -D doc=disabled -D magicleap=disabled -D msdk=disabled \
     -D dts=disabled -D faac=disabled -D faad=disabled \
-    -D libmms=disabled -D mpeg2enc=disabled -D mplex=disabled \
-    -D neon=disabled -D rtmp=disabled -D rtmp2=disabled \
+    -D mpeg2enc=disabled -D mplex=disabled \
+    -D neon=disabled -D rtmp=disabled \
     -D flite=disabled -D sbc=disabled -D opencv=disabled \
     %{!?with_extras:-D spandsp=disabled -D va=disabled } \
     -D voamrwbenc=disabled -D x265=disabled \
     -D dvbsuboverlay=disabled -D dvdspu=disabled -D siren=disabled \
-    -D real=disabled -D opensles=disabled -D tinyalsa=disabled \
+    -D opensles=disabled -D tinyalsa=disabled \
     -D wasapi=disabled -D wasapi2=disabled -D avtp=disabled \
     -D dc1394=disabled -D directfb=disabled -D iqa=disabled \
     -D libde265=disabled -D musepack=disabled -D openni2=disabled \
-    -D sctp=disabled -D svthevcenc=disabled -D voaacenc=disabled \
+    -D svthevcenc=disabled -D voaacenc=disabled \
     -D zxing=disabled -D wpe=disabled -D x11=disabled \
-    -D openh264=disabled
+%ifarch s390x
+    -D ldac=disabled 		 		\
+%else
+    %{!?with_extras:-D ldac=disabled } 		\
+%endif
+    %{!?with_extras:-D qroverlay=disabled } 		\
+    -D openh264=disabled -D gs=disabled -D isac=disabled \
+    -D onnx=disabled -D openaptx=disabled -Dgpl=enabled \
+    -D amfcodec=disabled -D directshow=disabled -D qsv=disabled
 
 %meson_build
 
@@ -341,7 +341,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 
 %files -f gst-plugins-bad-%{majorminor}.lang
 %license COPYING
-%doc AUTHORS README REQUIREMENTS
+%doc AUTHORS NEWS README.md README.static-linking RELEASE REQUIREMENTS
 
 %{_metainfodir}/*.appdata.xml
 %{_bindir}/gst-transcoder-%{majorminor}
@@ -357,6 +357,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_datadir}/gstreamer-%{majorminor}/encoding-profiles/file-extension/mp4.gep
 %{_datadir}/gstreamer-%{majorminor}/encoding-profiles/file-extension/oga.gep
 %{_datadir}/gstreamer-%{majorminor}/encoding-profiles/file-extension/ogv.gep
+%{_datadir}/gstreamer-%{majorminor}/encoding-profiles/file-extension/ts.gep
 %{_datadir}/gstreamer-%{majorminor}/encoding-profiles/file-extension/webm.gep
 %{_datadir}/gstreamer-%{majorminor}/encoding-profiles/online-services/youtube.gep
 
@@ -368,27 +369,41 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_libdir}/libgstbadaudio-%{majorminor}.so.*
 %{_libdir}/libgstcodecparsers-%{majorminor}.so.*
 %{_libdir}/libgstcodecs-%{majorminor}.so.*
+%{_libdir}/libgstcuda-%{majorminor}.so.*
 %{_libdir}/libgstinsertbin-%{majorminor}.so.*
 %{_libdir}/libgstisoff-%{majorminor}.so.*
 %{_libdir}/libgstmpegts-%{majorminor}.so.*
 #{_libdir}/libgstopencv-%{majorminor}.so.*
+%{_libdir}/libgstplay-%{majorminor}.so.*
 %{_libdir}/libgstplayer-%{majorminor}.so.*
 %{_libdir}/libgstphotography-%{majorminor}.so.*
 %{_libdir}/libgstsctp-%{majorminor}.so.*
 %{_libdir}/libgsttranscoder-%{majorminor}.so.*
 %{_libdir}/libgsturidownloader-%{majorminor}.so.*
 %{_libdir}/libgstvulkan-%{majorminor}.so.*
+%if %{with extras}
+%{_libdir}/libgstva-%{majorminor}.so.*
+%endif
 %{_libdir}/libgstwebrtc-%{majorminor}.so.*
+%if %{with extras}
+%{_libdir}/libgstwebrtcnice-%{majorminor}.so.*
+%endif
 %if 0%{?fedora} || 0%{?rhel} > 7
 %{_libdir}/libgstwayland-%{majorminor}.so.*
 %endif
 
+%{_libdir}/girepository-1.0/CudaGst-1.0.typelib
 %{_libdir}/girepository-1.0/GstBadAudio-1.0.typelib
 %{_libdir}/girepository-1.0/GstCodecs-1.0.typelib
+%{_libdir}/girepository-1.0/GstCuda-1.0.typelib
 %{_libdir}/girepository-1.0/GstInsertBin-1.0.typelib
 %{_libdir}/girepository-1.0/GstMpegts-1.0.typelib
+%{_libdir}/girepository-1.0/GstPlay-1.0.typelib
 %{_libdir}/girepository-1.0/GstPlayer-1.0.typelib
 %{_libdir}/girepository-1.0/GstTranscoder-1.0.typelib
+%if %{with extras}
+%{_libdir}/girepository-1.0/GstVa-1.0.typelib
+%endif
 %{_libdir}/girepository-1.0/GstVulkan-1.0.typelib
 %{_libdir}/girepository-1.0/GstVulkanWayland-1.0.typelib
 %{_libdir}/girepository-1.0/GstWebRTC-1.0.typelib
@@ -407,6 +422,8 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_libdir}/gstreamer-%{majorminor}/libgstautoconvert.so
 %{_libdir}/gstreamer-%{majorminor}/libgstbayer.so
 %{_libdir}/gstreamer-%{majorminor}/libgstcamerabin.so
+%{_libdir}/gstreamer-%{majorminor}/libgstcodecalpha.so
+%{_libdir}/gstreamer-%{majorminor}/libgstcodectimestamper.so
 %{_libdir}/gstreamer-%{majorminor}/libgstcoloreffects.so
 %{_libdir}/gstreamer-%{majorminor}/libgstdash.so
 %{_libdir}/gstreamer-%{majorminor}/libgstdvbsubenc.so
@@ -448,6 +465,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_libdir}/gstreamer-%{majorminor}/libgstresindvd.so
 %{_libdir}/gstreamer-%{majorminor}/libgstrfbsrc.so
 %{_libdir}/gstreamer-%{majorminor}/libgstrsvg.so
+%{_libdir}/gstreamer-%{majorminor}/libgstrtmp2.so
 %{_libdir}/gstreamer-%{majorminor}/libgstrtpmanagerbad.so
 %{_libdir}/gstreamer-%{majorminor}/libgstrtponvif.so
 %{_libdir}/gstreamer-%{majorminor}/libgstsdpelem.so
@@ -474,6 +492,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 
 # Plugins with external dependencies
 
+%{_libdir}/gstreamer-%{majorminor}/libgstaes.so
 %{_libdir}/gstreamer-%{majorminor}/libgstbluez.so
 %{_libdir}/gstreamer-%{majorminor}/libgstbz2.so
 %{_libdir}/gstreamer-%{majorminor}/libgstclosedcaption.so
@@ -481,10 +500,12 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_libdir}/gstreamer-%{majorminor}/libgstdtls.so
 %{_libdir}/gstreamer-%{majorminor}/libgsthls.so
 %{_libdir}/gstreamer-%{majorminor}/libgstgsm.so
+%{_libdir}/gstreamer-%{majorminor}/libgstgtkwayland.so
 %{_libdir}/gstreamer-%{majorminor}/libgstkms.so
 %{_libdir}/gstreamer-%{majorminor}/libgstnvcodec.so
 %{_libdir}/gstreamer-%{majorminor}/libgstopusparse.so
 %{_libdir}/gstreamer-%{majorminor}/libgstrist.so
+%{_libdir}/gstreamer-%{majorminor}/libgstsctp.so
 %{_libdir}/gstreamer-%{majorminor}/libgstsndfile.so
 %{_libdir}/gstreamer-%{majorminor}/libgstsoundtouch.so
 %{_libdir}/gstreamer-%{majorminor}/libgstsrtp.so
@@ -519,14 +540,17 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_libdir}/gstreamer-%{majorminor}/libgstgme.so
 %{_libdir}/gstreamer-%{majorminor}/libgstkate.so
 %{_libdir}/gstreamer-%{majorminor}/libgstladspa.so
+%ifnarch s390x
+%{_libdir}/gstreamer-%{majorminor}/libgstldac.so
+%endif
 %{_libdir}/gstreamer-%{majorminor}/libgstmicrodns.so
 %{_libdir}/gstreamer-%{majorminor}/libgstmodplug.so
-%{_libdir}/gstreamer-%{majorminor}/libgstofa.so
 %{_libdir}/gstreamer-%{majorminor}/libgstopenal.so
 #{_libdir}/gstreamer-%{majorminor}/libgstopencv.so
 %{_libdir}/gstreamer-%{majorminor}/libgstopenexr.so
 %{_libdir}/gstreamer-%{majorminor}/libgstopenjpeg.so
 %{_libdir}/gstreamer-%{majorminor}/libgstopenmpt.so
+%{_libdir}/gstreamer-%{majorminor}/libgstqroverlay.so
 %{_libdir}/gstreamer-%{majorminor}/libgstspandsp.so
 %{_libdir}/gstreamer-%{majorminor}/libgstsrt.so
 %{_libdir}/gstreamer-%{majorminor}/libgstteletext.so
@@ -551,12 +575,18 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %doc %{_datadir}/gtk-doc/html/gst-plugins-bad-libs-%{majorminor}
 %endif
 
+%{_datadir}/gir-1.0/CudaGst-%{majorminor}.gir
 %{_datadir}/gir-1.0/GstBadAudio-%{majorminor}.gir
 %{_datadir}/gir-1.0/GstCodecs-%{majorminor}.gir
+%{_datadir}/gir-1.0/GstCuda-%{majorminor}.gir
 %{_datadir}/gir-1.0/GstInsertBin-%{majorminor}.gir
 %{_datadir}/gir-1.0/GstMpegts-%{majorminor}.gir
+%{_datadir}/gir-1.0/GstPlay-%{majorminor}.gir
 %{_datadir}/gir-1.0/GstPlayer-%{majorminor}.gir
 %{_datadir}/gir-1.0/GstTranscoder-%{majorminor}.gir
+%if %{with extras}
+%{_datadir}/gir-1.0/GstVa-%{majorminor}.gir
+%endif
 %{_datadir}/gir-1.0/GstVulkan-%{majorminor}.gir
 %{_datadir}/gir-1.0/GstVulkanWayland-%{majorminor}.gir
 %{_datadir}/gir-1.0/GstWebRTC-%{majorminor}.gir
@@ -564,19 +594,27 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_libdir}/libgstadaptivedemux-%{majorminor}.so
 %{_libdir}/libgstbasecamerabinsrc-%{majorminor}.so
 %{_libdir}/libgstbadaudio-%{majorminor}.so
+%{_libdir}/libgstcuda-%{majorminor}.so
 %{_libdir}/libgstcodecparsers-%{majorminor}.so
 %{_libdir}/libgstcodecs-%{majorminor}.so
 %{_libdir}/libgstinsertbin-%{majorminor}.so
 %{_libdir}/libgstisoff-%{majorminor}.so
 %{_libdir}/libgstmpegts-%{majorminor}.so
 #{_libdir}/libgstopencv-%{majorminor}.so
+%{_libdir}/libgstplay-%{majorminor}.so
 %{_libdir}/libgstplayer-%{majorminor}.so
 %{_libdir}/libgstphotography-%{majorminor}.so
 %{_libdir}/libgstsctp-%{majorminor}.so
 %{_libdir}/libgsttranscoder-%{majorminor}.so
 %{_libdir}/libgsturidownloader-%{majorminor}.so
 %{_libdir}/libgstvulkan-%{majorminor}.so
+%if %{with extras}
+%{_libdir}/libgstva-%{majorminor}.so
+%endif
 %{_libdir}/libgstwebrtc-%{majorminor}.so
+%if %{with extras}
+%{_libdir}/libgstwebrtcnice-%{majorminor}.so
+%endif
 %if 0%{?fedora} || 0%{?rhel} > 7
 %{_libdir}/libgstwayland-%{majorminor}.so
 %endif
@@ -584,34 +622,52 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_includedir}/gstreamer-%{majorminor}/gst/audio
 %{_includedir}/gstreamer-%{majorminor}/gst/basecamerabinsrc
 %{_includedir}/gstreamer-%{majorminor}/gst/codecparsers
+%{_includedir}/gstreamer-%{majorminor}/gst/cuda/
 %{_includedir}/gstreamer-%{majorminor}/gst/insertbin
 %{_includedir}/gstreamer-%{majorminor}/gst/interfaces/photography*
 %{_includedir}/gstreamer-%{majorminor}/gst/isoff/
 %{_includedir}/gstreamer-%{majorminor}/gst/mpegts
 #{_includedir}/gstreamer-%{majorminor}/gst/opencv
+%{_includedir}/gstreamer-%{majorminor}/gst/play
 %{_includedir}/gstreamer-%{majorminor}/gst/player
 %{_includedir}/gstreamer-%{majorminor}/gst/sctp
 %{_includedir}/gstreamer-%{majorminor}/gst/transcoder
 %{_includedir}/gstreamer-%{majorminor}/gst/uridownloader
+%if %{with extras}
+%{_includedir}/gstreamer-%{majorminor}/gst/va/
+%endif
 %{_includedir}/gstreamer-%{majorminor}/gst/vulkan/
+%{_includedir}/gstreamer-%{majorminor}/gst/wayland/
 %{_includedir}/gstreamer-%{majorminor}/gst/webrtc/
 
 # pkg-config files
 %{_libdir}/pkgconfig/gstreamer-bad-audio-%{majorminor}.pc
+%{_libdir}/pkgconfig/gstreamer-cuda-%{majorminor}.pc
 %{_libdir}/pkgconfig/gstreamer-codecparsers-%{majorminor}.pc
 %{_libdir}/pkgconfig/gstreamer-insertbin-%{majorminor}.pc
 %{_libdir}/pkgconfig/gstreamer-mpegts-%{majorminor}.pc
 %{_libdir}/pkgconfig/gstreamer-photography-%{majorminor}.pc
+%{_libdir}/pkgconfig/gstreamer-play-%{majorminor}.pc
 %{_libdir}/pkgconfig/gstreamer-player-%{majorminor}.pc
 %{_libdir}/pkgconfig/gstreamer-plugins-bad-%{majorminor}.pc
 %{_libdir}/pkgconfig/gstreamer-sctp-%{majorminor}.pc
 %{_libdir}/pkgconfig/gstreamer-transcoder-%{majorminor}.pc
-%{_libdir}/pkgconfig/gstreamer-webrtc-%{majorminor}.pc
+%if %{with extras}
+%{_libdir}/pkgconfig/gstreamer-va-%{majorminor}.pc
+%endif
 %{_libdir}/pkgconfig/gstreamer-vulkan-%{majorminor}.pc
 %{_libdir}/pkgconfig/gstreamer-vulkan-wayland-%{majorminor}.pc
+%{_libdir}/pkgconfig/gstreamer-wayland-%{majorminor}.pc
+%{_libdir}/pkgconfig/gstreamer-webrtc-%{majorminor}.pc
+%if %{with extras}
+%{_libdir}/pkgconfig/gstreamer-webrtc-nice-%{majorminor}.pc
+%endif
 
 
 %changelog
+* Thu Apr 13 2023 Wim Taymans <wtaymans@redhat.com> - 1.22.1-1
+- Update to 1.22.1
+
 * Mon Nov 07 2022 Tomas Popela <tpopela@redhat.com> - 1.18.4-6
 - Fix FTBFS by BR wayland-protocols-devel
 - Resolves: rhbz#2140540
