@@ -14,7 +14,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.16.1
-Release:        1%{?gitcommit:.git%{shortcommit}}%{?dist}
+Release:        2%{?gitcommit:.git%{shortcommit}}%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -32,6 +32,7 @@ Source0:        gst-plugins-bad-free-%{version}.tar.xz
 Source1:        gst-p-bad-cleanup.sh
 
 #upstream patches
+Patch0:		0001-mxfdemux-Store-GstMXFDemuxEssenceTrack-in-their-own-.patch
 
 BuildRequires:  gstreamer1-devel >= %{version}
 BuildRequires:  gstreamer1-plugins-base-devel >= %{version}
@@ -184,6 +185,7 @@ aren't tested well enough, or the code is not of good enough quality.
 
 %prep
 %setup -q -n gst-plugins-bad-%{version}
+%patch0 -p1
 
 %build
 %configure --disable-silent-rules --disable-fatal-warnings \
@@ -472,6 +474,10 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -fv {} ';'
 
 
 %changelog
+* Wed Dec 13 2023 Wim Taymans <wtaymans@redhat.com> - 1.16.1-2
+- Patch CVE-2023-44446: MXF demuxer use-after-free
+- Resolves: RHEL-17036
+
 * Mon Nov 18 2019 Wim Taymans <wtaymans@redhat.com> - 1.16.1-1
 - Update to 1.16.1
 - Remove upstreamed patches
