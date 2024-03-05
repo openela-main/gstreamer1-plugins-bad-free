@@ -14,7 +14,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.22.1
-Release:        1%{?gitcommit:.git%{shortcommit}}%{?dist}
+Release:        2%{?gitcommit:.git%{shortcommit}}%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -30,6 +30,9 @@ URL:            http://gstreamer.freedesktop.org/
 %endif
 Source0:        gst-plugins-bad-free-%{version}.tar.xz
 Source1:        gst-p-bad-cleanup.sh
+
+Patch0:		0001-mxfdemux-Store-GstMXFDemuxEssenceTrack-in-their-own-.patch
+Patch1:		0002-codecparsers-av1-Clip-max-tile-rows-and-cols-values.patch
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -231,6 +234,8 @@ aren't tested well enough, or the code is not of good enough quality.
 
 %prep
 %setup -q -n gst-plugins-bad-%{version}
+%patch0 -p3
+%patch1 -p3
 
 %build
 %meson \
@@ -665,6 +670,11 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 
 
 %changelog
+* Tue Dec 12 2023 Wim Taymans <wtaymans@redhat.com> - 1.22.1-2
+- Patch CVE-2023-44429: AV1 codec parser heap-based buffer overflow
+- Patch CVE-2023-44446: MXF demuxer use-after-free
+- Resolves: RHEL-17030, RHEL-17039
+
 * Thu Apr 13 2023 Wim Taymans <wtaymans@redhat.com> - 1.22.1-1
 - Update to 1.22.1
 
