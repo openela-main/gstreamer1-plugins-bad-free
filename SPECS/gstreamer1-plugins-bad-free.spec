@@ -14,7 +14,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.22.1
-Release:        2%{?gitcommit:.git%{shortcommit}}%{?dist}
+Release:        4%{?gitcommit:.git%{shortcommit}}%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -33,6 +33,11 @@ Source1:        gst-p-bad-cleanup.sh
 
 Patch0:		0001-mxfdemux-Store-GstMXFDemuxEssenceTrack-in-their-own-.patch
 Patch1:		0002-codecparsers-av1-Clip-max-tile-rows-and-cols-values.patch
+Patch2:		0001-mxfdemux-Fix-integer-overflow-causing-out-of-bounds-.patch
+Patch3:		0002-mxfdemux-Check-number-of-channels-for-AES3-audio.patch
+Patch4:		0003-av1parser-Fix-array-sizes-in-scalability-structure.patch
+Patch5:		0004-h265parser-Fix-possible-overflow-using-max_sub_layer.patch
+
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -236,6 +241,10 @@ aren't tested well enough, or the code is not of good enough quality.
 %setup -q -n gst-plugins-bad-%{version}
 %patch0 -p3
 %patch1 -p3
+%patch2 -p3
+%patch3 -p3
+%patch4 -p3
+%patch5 -p3
 
 %build
 %meson \
@@ -670,6 +679,17 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 
 
 %changelog
+* Wed Jan 17 2024 Wim Taymans <wtaymans@redhat.com> - 1.22.1-4
+- CVE-2023-40474: Integer overflow leading to heap overwrite in MXF
+- CVE-2023-40475: Integer overflow leading to heap overwrite in MXF
+- CVE-2023-40476: Integer overflow in H.265 video parser
+- ZDI-CAN-22300: buffer overflow vulnerability
+- Resolves: RHEL-19501, RHEL-19505, RHEL-19506, RHEL-20201
+
+* Thu Jan 11 2024 Wim Taymans <wtaymans@redhat.com> - 1.22.1-3
+- Bump version
+- Resolves: RHEL-16795, RHEL-16788
+
 * Tue Dec 12 2023 Wim Taymans <wtaymans@redhat.com> - 1.22.1-2
 - Patch CVE-2023-44429: AV1 codec parser heap-based buffer overflow
 - Patch CVE-2023-44446: MXF demuxer use-after-free
