@@ -14,7 +14,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.16.1
-Release:        2%{?gitcommit:.git%{shortcommit}}%{?dist}
+Release:        4%{?gitcommit:.git%{shortcommit}}%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -33,6 +33,9 @@ Source1:        gst-p-bad-cleanup.sh
 
 #upstream patches
 Patch0:		0001-mxfdemux-Store-GstMXFDemuxEssenceTrack-in-their-own-.patch
+Patch1:		0003-mxfdemux-Fix-integer-overflow-causing-out-of-bounds-.patch
+Patch2:		0004-mxfdemux-Check-number-of-channels-for-AES3-audio.patch
+Patch3:		0005-h265parser-Fix-possible-overflow-using-max_sub_layer.patch
 
 BuildRequires:  gstreamer1-devel >= %{version}
 BuildRequires:  gstreamer1-plugins-base-devel >= %{version}
@@ -186,6 +189,9 @@ aren't tested well enough, or the code is not of good enough quality.
 %prep
 %setup -q -n gst-plugins-bad-%{version}
 %patch0 -p1
+%patch1 -p1
+%patch2 -p1
+%patch3 -p1
 
 %build
 %configure --disable-silent-rules --disable-fatal-warnings \
@@ -474,9 +480,19 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -fv {} ';'
 
 
 %changelog
+* Wed Jan 17 2024 Wim Taymans <wtaymans@redhat.com> - 1.16.1-4
+- Patch CVE-2023-40474: Integer overflow
+- Patch CVE-2023-40475: Integer overflow
+- Patch CVE-2023-40476: Integer overflow in H.265 video parser
+- Resolves: RHEL-19500, RHEL-19504, RHEL-19507
+
+* Thu Jan 11 2024 Wim Taymans <wtaymans@redhat.com> - 1.16.1-3
+- Bump to avoid conflict with z stream.
+- Resolves: RHEL-16794
+
 * Wed Dec 13 2023 Wim Taymans <wtaymans@redhat.com> - 1.16.1-2
 - Patch CVE-2023-44446: MXF demuxer use-after-free
-- Resolves: RHEL-17036
+- Resolves: RHEL-16794
 
 * Mon Nov 18 2019 Wim Taymans <wtaymans@redhat.com> - 1.16.1-1
 - Update to 1.16.1
