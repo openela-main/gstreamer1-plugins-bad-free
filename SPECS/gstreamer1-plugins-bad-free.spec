@@ -2,42 +2,37 @@
 %global         _gobject_introspection  1.31.1
 
 # Only have extras package on fedora
-%if 0%{?fedora}
-%bcond_without extras
-%else
-%bcond_with extras
-%endif
+%bcond extras %{defined fedora}
+%bcond opencv %[ 0%{?fedora} >= 39 ]
+%bcond openh264 %[ 0%{?fedora} >= 40 ]
 
 #global gitrel     140
 #global gitcommit  4ca3a22b6b33ad8be4383063e76f79c4d346535d
 #global shortcommit %(c=%{gitcommit}; echo ${c:0:5})
 
 Name:           gstreamer1-plugins-bad-free
-Version:        1.22.1
-Release:        4%{?gitcommit:.git%{shortcommit}}%{?dist}
+Version:        1.22.12
+Release:        3%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
 URL:            http://gstreamer.freedesktop.org/
 %if 0%{?gitrel}
-# git clone git://anongit.freedesktop.org/gstreamer/gst-plugins-good
-# cd gst-plugins-good; git reset --hard %{gitcommit}; ./autogen.sh; make; make distcheck
+# git clone git://anongit.freedesktop.org/gstreamer/gst-plugins-bad
+# cd gst-plugins-bad; git reset --hard %{gitcommit}; ./autogen.sh; make; make distcheck
 # modified with gst-p-bad-cleanup.sh from SOURCE1
 %else
 # The source is:
-# http://gstreamer.freedesktop.org/src/gst-plugins-bad/gst-plugins-bad-%{version}.tar.xz
+# https://gstreamer.freedesktop.org/src/gst-plugins-bad/gst-plugins-bad-%{version}.tar.xz
 # modified with gst-p-bad-cleanup.sh from SOURCE1
 %endif
 Source0:        gst-plugins-bad-free-%{version}.tar.xz
 Source1:        gst-p-bad-cleanup.sh
 
-Patch0:		0001-mxfdemux-Store-GstMXFDemuxEssenceTrack-in-their-own-.patch
-Patch1:		0002-codecparsers-av1-Clip-max-tile-rows-and-cols-values.patch
-Patch2:		0001-mxfdemux-Fix-integer-overflow-causing-out-of-bounds-.patch
-Patch3:		0002-mxfdemux-Check-number-of-channels-for-AES3-audio.patch
-Patch4:		0003-av1parser-Fix-array-sizes-in-scalability-structure.patch
-Patch5:		0004-h265parser-Fix-possible-overflow-using-max_sub_layer.patch
-
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/5622
+Patch:          openh264-add-license-file.patch
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/5780
+Patch:          openh264-drop-runtime-version-checks.patch
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -83,13 +78,14 @@ BuildRequires:  libwebp-devel
 BuildRequires:  mesa-libEGL-devel
 BuildRequires:  vulkan-devel
 #BuildRequires:  mesa-vulkan-devel
-BuildRequires:  webrtc-audio-processing-devel
+BuildRequires:  pkgconfig(webrtc-audio-processing) >= 0.3
 %if 0
 BuildRequires:  wpewebkit-devel
 BuildRequires:  wpebackend-fdo-devel
 %endif
 BuildRequires:  glslc
 BuildRequires:  libdrm-devel
+BuildRequires:  libva-devel
 
 %if %{with extras}
 BuildRequires:  ladspa-devel
@@ -114,15 +110,18 @@ BuildRequires:  libxml2-devel
 BuildRequires:  game-music-emu-devel
 BuildRequires:  libkate-devel
 BuildRequires:  libmodplug-devel
+BuildRequires:  libmpcdec-devel
 ## Plugins not ported
 #BuildRequires:  libmusicbrainz-devel
 #BuildRequires:  libtimidity-devel
-BuildRequires:  libva-devel
 BuildRequires:  openal-soft-devel
-## If enabled, adds ~90 additional deps; perhaps can be moved to a
-## subpackage?
-#BuildRequires:  opencv-devel
+%if %{with opencv}
+BuildRequires:  opencv-devel
+%endif
 BuildRequires:  openjpeg2-devel
+%if %{with openh264}
+BuildRequires:  pkgconfig(openh264)
+%endif
 BuildRequires:  pkgconfig(spandsp) >= 0.0.6
 ## Plugins not ported
 #BuildRequires:  SDL-devel
@@ -137,12 +136,20 @@ BuildRequires:  pkgconfig(ldacBT-enc)
 %endif
 BuildRequires:  qrencode-devel
 BuildRequires:  json-glib-devel
+BuildRequires:  vo-amrwbenc-devel
+BuildRequires:  libavtp-devel
+BuildRequires:  libdca-devel
+BuildRequires:  flite-devel
 %endif
+
+Requires:       %{name}-libs%{?_isa} = %{version}-%{release}
 
 %if 0%{?fedora} >= 31 || 0%{?rhel} >= 9
 # libgstfdkaac.so used to be shipped in -nonfree
 Obsoletes: gstreamer1-plugins-bad-nonfree < 1.16.1-2
 %endif
+# dtsdec, dvbsuboverlay, siren used to be shipped in -freeworld
+Conflicts: gstreamer1-plugins-bad-freeworld < 1.22.7-2
 
 # Drop after f36
 Provides: gst-transcoder = 1.16.0-4
@@ -219,6 +226,49 @@ plugin which allows playback of midi files.
 %endif
 
 
+%if %{with opencv}
+%package opencv
+Summary:         GStreamer "bad" plugins OpenCV plugins
+Requires:        %{name}%{?_isa} = %{version}-%{release}
+Requires:        opencv-data
+
+%description opencv
+GStreamer is a streaming media framework, based on graphs of elements which
+operate on media data.
+
+gstreamer-plugins-bad contains plug-ins that aren't tested well enough,
+or the code is not of good enough quality.
+
+This package (%{name}-opencv) contains the OpenCV plugins.
+%endif
+
+
+%if %{with openh264}
+%package -n gstreamer1-plugin-openh264
+Summary:        GStreamer OpenH264 plugin
+License:        LGPL-2.0-or-later AND BSD-2-Clause
+# Prefer actual openh264 library over the noopenh264 stub
+Suggests:       openh264%{_isa}
+
+%description -n gstreamer1-plugin-openh264
+GStreamer is a streaming media framework, based on graphs of elements which
+operate on media data.
+
+This package contains the OpenH264 plugin.
+%endif
+
+
+%package libs
+Summary:        Runtime libraries for the GStreamer media framework "bad" plug-ins
+
+%description libs
+GStreamer is a streaming media framework, based on graphs of elements which
+operate on media data.
+
+This package contains the runtime libraries for plugins that
+aren't tested well enough, or the code is not of good enough quality.
+
+
 %package devel
 Summary:        Development files for the GStreamer media framework "bad" plug-ins
 Requires:       %{name}%{?_isa} = %{version}-%{release}
@@ -238,13 +288,7 @@ aren't tested well enough, or the code is not of good enough quality.
 
 
 %prep
-%setup -q -n gst-plugins-bad-%{version}
-%patch0 -p3
-%patch1 -p3
-%patch2 -p3
-%patch3 -p3
-%patch4 -p3
-%patch5 -p3
+%autosetup -n gst-plugins-bad-%{version} -p3
 
 %build
 %meson \
@@ -260,25 +304,31 @@ aren't tested well enough, or the code is not of good enough quality.
     %{!?with_extras:-D ttml=disabled -D kate=disabled } \
     %{!?with_extras:-D modplug=disabled } \
     %{!?with_extras:-D openal=disabled } \
-    %{!?with_extras:-D opencv=disabled -D openjpeg=disabled } \
+    %{!?with_opencv:-D opencv=disabled } \
+    %{!?with_openh264:-D openh264=disabled } \
+    %{!?with_extras:-D openjpeg=disabled } \
     %{!?with_extras:-D wildmidi=disabled -D zbar=disabled } \
     %{!?with_extras:-D gme=disabled -D lv2=disabled } \
     %{!?with_extras:-D webrtc=disabled -D aom=disabled } \
     %{!?with_extras:-D teletext=disabled -D srt=disabled } \
     %{!?with_extras:-D openmpt=disabled -D microdns=disabled } \
     %{!?with_extras:-D ladspa=disabled } \
+    %{!?with_extras:-D avtp=disabled -D dts=disabled } \
+    %{!?with_extras:-D flite=disabled } \
     -D doc=disabled -D magicleap=disabled -D msdk=disabled \
-    -D dts=disabled -D faac=disabled -D faad=disabled \
+    -D faac=disabled -D faad=disabled \
     -D mpeg2enc=disabled -D mplex=disabled \
     -D neon=disabled -D rtmp=disabled \
-    -D flite=disabled -D sbc=disabled -D opencv=disabled \
-    %{!?with_extras:-D spandsp=disabled -D va=disabled } \
-    -D voamrwbenc=disabled -D x265=disabled \
-    -D dvbsuboverlay=disabled -D dvdspu=disabled -D siren=disabled \
+    -D sbc=disabled \
+    %{!?with_extras:-D spandsp=disabled } \
+    %{!?with_extras:-D voamrwbenc=disabled } \
+    -D x265=disabled \
+    -D dvdspu=disabled \
     -D opensles=disabled -D tinyalsa=disabled \
-    -D wasapi=disabled -D wasapi2=disabled -D avtp=disabled \
+    -D wasapi=disabled -D wasapi2=disabled \
     -D dc1394=disabled -D directfb=disabled -D iqa=disabled \
-    -D libde265=disabled -D musepack=disabled -D openni2=disabled \
+    -D libde265=disabled -D openni2=disabled \
+    %{!?with_extras:-D musepack=disabled } \
     -D svthevcenc=disabled -D voaacenc=disabled \
     -D zxing=disabled -D wpe=disabled -D x11=disabled \
 %ifarch s390x
@@ -287,7 +337,7 @@ aren't tested well enough, or the code is not of good enough quality.
     %{!?with_extras:-D ldac=disabled } 		\
 %endif
     %{!?with_extras:-D qroverlay=disabled } 		\
-    -D openh264=disabled -D gs=disabled -D isac=disabled \
+    -D gs=disabled -D isac=disabled \
     -D onnx=disabled -D openaptx=disabled -Dgpl=enabled \
     -D amfcodec=disabled -D directshow=disabled -D qsv=disabled
 
@@ -295,6 +345,12 @@ aren't tested well enough, or the code is not of good enough quality.
 
 %install
 %meson_install
+
+%if %{with opencv}
+# no pkgconfig file or GIR, nothing aside from the plugin uses the library
+rm -f $RPM_BUILD_ROOT%{_includedir}/gstreamer-%{majorminor}/gst/opencv/*
+rm -f $RPM_BUILD_ROOT%{_libdir}/libgstopencv-%{majorminor}.so
+%endif
 
 # Register as an AppStream component to be visible in the software center
 #
@@ -346,6 +402,39 @@ cat > $RPM_BUILD_ROOT%{_metainfodir}/gstreamer-bad-free.appdata.xml <<EOF
 </component>
 EOF
 
+%if %{with openh264}
+cat > $RPM_BUILD_ROOT%{_metainfodir}/gstreamer-openh264.appdata.xml <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2015 Kalev Lember <klember@redhat.com> -->
+<component type="codec">
+  <id>gstreamer-openh264</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <name>GStreamer Multimedia Codecs - H.264</name>
+  <summary>Multimedia playback for H.264</summary>
+  <description>
+    <p>
+      This addon includes a codec for H.264 playback and encoding.
+    </p>
+    <p>
+      These codecs can be used to encode and decode media files where the
+      format is not patent encumbered.
+    </p>
+    <p>
+      A codec decodes audio and video for playback or editing and is also
+      used for transmission or storage.
+      Different codecs are used in video-conferencing, streaming media and
+      video editing applications.
+    </p>
+  </description>
+  <url type="homepage">http://gstreamer.freedesktop.org/</url>
+  <url type="bugtracker">https://bugzilla.gnome.org/enter_bug.cgi?product=GStreamer</url>
+  <url type="help">http://gstreamer.freedesktop.org/documentation/</url>
+  <url type="donation">http://www.gnome.org/friends/</url>
+  <update_contact><!-- upstream-contact_at_email.com --></update_contact>
+</component>
+EOF
+%endif
+
 %find_lang gst-plugins-bad-%{majorminor}
 
 # unpackaged files
@@ -357,7 +446,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %license COPYING
 %doc AUTHORS NEWS README.md README.static-linking RELEASE REQUIREMENTS
 
-%{_metainfodir}/*.appdata.xml
+%{_metainfodir}/gstreamer-bad-free.appdata.xml
 %{_bindir}/gst-transcoder-%{majorminor}
 
 # presets
@@ -374,53 +463,6 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_datadir}/gstreamer-%{majorminor}/encoding-profiles/file-extension/ts.gep
 %{_datadir}/gstreamer-%{majorminor}/encoding-profiles/file-extension/webm.gep
 %{_datadir}/gstreamer-%{majorminor}/encoding-profiles/online-services/youtube.gep
-
-# opencv data
-#{_datadir}/gst-plugins-bad/%{majorminor}/opencv_haarcascades/
-
-%{_libdir}/libgstadaptivedemux-%{majorminor}.so.*
-%{_libdir}/libgstbasecamerabinsrc-%{majorminor}.so.*
-%{_libdir}/libgstbadaudio-%{majorminor}.so.*
-%{_libdir}/libgstcodecparsers-%{majorminor}.so.*
-%{_libdir}/libgstcodecs-%{majorminor}.so.*
-%{_libdir}/libgstcuda-%{majorminor}.so.*
-%{_libdir}/libgstinsertbin-%{majorminor}.so.*
-%{_libdir}/libgstisoff-%{majorminor}.so.*
-%{_libdir}/libgstmpegts-%{majorminor}.so.*
-#{_libdir}/libgstopencv-%{majorminor}.so.*
-%{_libdir}/libgstplay-%{majorminor}.so.*
-%{_libdir}/libgstplayer-%{majorminor}.so.*
-%{_libdir}/libgstphotography-%{majorminor}.so.*
-%{_libdir}/libgstsctp-%{majorminor}.so.*
-%{_libdir}/libgsttranscoder-%{majorminor}.so.*
-%{_libdir}/libgsturidownloader-%{majorminor}.so.*
-%{_libdir}/libgstvulkan-%{majorminor}.so.*
-%if %{with extras}
-%{_libdir}/libgstva-%{majorminor}.so.*
-%endif
-%{_libdir}/libgstwebrtc-%{majorminor}.so.*
-%if %{with extras}
-%{_libdir}/libgstwebrtcnice-%{majorminor}.so.*
-%endif
-%if 0%{?fedora} || 0%{?rhel} > 7
-%{_libdir}/libgstwayland-%{majorminor}.so.*
-%endif
-
-%{_libdir}/girepository-1.0/CudaGst-1.0.typelib
-%{_libdir}/girepository-1.0/GstBadAudio-1.0.typelib
-%{_libdir}/girepository-1.0/GstCodecs-1.0.typelib
-%{_libdir}/girepository-1.0/GstCuda-1.0.typelib
-%{_libdir}/girepository-1.0/GstInsertBin-1.0.typelib
-%{_libdir}/girepository-1.0/GstMpegts-1.0.typelib
-%{_libdir}/girepository-1.0/GstPlay-1.0.typelib
-%{_libdir}/girepository-1.0/GstPlayer-1.0.typelib
-%{_libdir}/girepository-1.0/GstTranscoder-1.0.typelib
-%if %{with extras}
-%{_libdir}/girepository-1.0/GstVa-1.0.typelib
-%endif
-%{_libdir}/girepository-1.0/GstVulkan-1.0.typelib
-%{_libdir}/girepository-1.0/GstVulkanWayland-1.0.typelib
-%{_libdir}/girepository-1.0/GstWebRTC-1.0.typelib
 
 # Plugins without external dependencies
 %{_libdir}/gstreamer-%{majorminor}/libgstaccurip.so
@@ -441,13 +483,10 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_libdir}/gstreamer-%{majorminor}/libgstcoloreffects.so
 %{_libdir}/gstreamer-%{majorminor}/libgstdash.so
 %{_libdir}/gstreamer-%{majorminor}/libgstdvbsubenc.so
+%{_libdir}/gstreamer-%{majorminor}/libgstdvbsuboverlay.so
 %{_libdir}/gstreamer-%{majorminor}/libgstfaceoverlay.so
 %if %{with extras}
 %{_libdir}/gstreamer-%{majorminor}/libgstfbdevsink.so
-%endif
-
-%if 0%{?fedora} >= 31 || 0%{?rhel} >= 9
-%{_libdir}/gstreamer-%{majorminor}/libgstfdkaac.so
 %endif
 %{_libdir}/gstreamer-%{majorminor}/libgstfestival.so
 %{_libdir}/gstreamer-%{majorminor}/libgstfieldanalysis.so
@@ -485,6 +524,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_libdir}/gstreamer-%{majorminor}/libgstsdpelem.so
 %{_libdir}/gstreamer-%{majorminor}/libgstsegmentclip.so
 %{_libdir}/gstreamer-%{majorminor}/libgstshm.so
+%{_libdir}/gstreamer-%{majorminor}/libgstsiren.so
 %{_libdir}/gstreamer-%{majorminor}/libgstsmooth.so
 %{_libdir}/gstreamer-%{majorminor}/libgstsmoothstreaming.so
 %{_libdir}/gstreamer-%{majorminor}/libgstspeed.so
@@ -512,6 +552,9 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_libdir}/gstreamer-%{majorminor}/libgstclosedcaption.so
 %{_libdir}/gstreamer-%{majorminor}/libgstcolormanagement.so
 %{_libdir}/gstreamer-%{majorminor}/libgstdtls.so
+%if 0%{?fedora} >= 31 || 0%{?rhel} >= 9
+%{_libdir}/gstreamer-%{majorminor}/libgstfdkaac.so
+%endif
 %{_libdir}/gstreamer-%{majorminor}/libgsthls.so
 %{_libdir}/gstreamer-%{majorminor}/libgstgsm.so
 %{_libdir}/gstreamer-%{majorminor}/libgstgtkwayland.so
@@ -523,6 +566,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_libdir}/gstreamer-%{majorminor}/libgstsndfile.so
 %{_libdir}/gstreamer-%{majorminor}/libgstsoundtouch.so
 %{_libdir}/gstreamer-%{majorminor}/libgstsrtp.so
+%{_libdir}/gstreamer-%{majorminor}/libgstva.so
 %{_libdir}/gstreamer-%{majorminor}/libgstvulkan.so
 %if 0%{?fedora} || 0%{?rhel} > 7
 %{_libdir}/gstreamer-%{majorminor}/libgstwaylandsink.so
@@ -544,13 +588,19 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 
 %if %{with extras}
 %files extras
+# presets
+%{_datadir}/gstreamer-%{majorminor}/presets/GstVoAmrwbEnc.prs
+
 # Plugins with external dependencies
 %{_libdir}/gstreamer-%{majorminor}/libgstaom.so
 %{_libdir}/gstreamer-%{majorminor}/libgstassrender.so
+%{_libdir}/gstreamer-%{majorminor}/libgstavtp.so
 %{_libdir}/gstreamer-%{majorminor}/libgstbs2b.so
 %{_libdir}/gstreamer-%{majorminor}/libgstchromaprint.so
 %{_libdir}/gstreamer-%{majorminor}/libgstcurl.so
 %{_libdir}/gstreamer-%{majorminor}/libgstdecklink.so
+%{_libdir}/gstreamer-%{majorminor}/libgstdtsdec.so
+%{_libdir}/gstreamer-%{majorminor}/libgstflite.so
 %{_libdir}/gstreamer-%{majorminor}/libgstgme.so
 %{_libdir}/gstreamer-%{majorminor}/libgstkate.so
 %{_libdir}/gstreamer-%{majorminor}/libgstladspa.so
@@ -559,8 +609,8 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %endif
 %{_libdir}/gstreamer-%{majorminor}/libgstmicrodns.so
 %{_libdir}/gstreamer-%{majorminor}/libgstmodplug.so
+%{_libdir}/gstreamer-%{majorminor}/libgstmusepack.so
 %{_libdir}/gstreamer-%{majorminor}/libgstopenal.so
-#{_libdir}/gstreamer-%{majorminor}/libgstopencv.so
 %{_libdir}/gstreamer-%{majorminor}/libgstopenexr.so
 %{_libdir}/gstreamer-%{majorminor}/libgstopenjpeg.so
 %{_libdir}/gstreamer-%{majorminor}/libgstopenmpt.so
@@ -568,7 +618,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_libdir}/gstreamer-%{majorminor}/libgstspandsp.so
 %{_libdir}/gstreamer-%{majorminor}/libgstsrt.so
 %{_libdir}/gstreamer-%{majorminor}/libgstteletext.so
-%{_libdir}/gstreamer-%{majorminor}/libgstva.so
+%{_libdir}/gstreamer-%{majorminor}/libgstvoamrwbenc.so
 
 %files zbar
 # Plugins with external dependencies
@@ -582,6 +632,62 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 # Plugins with external dependencies
 %{_libdir}/gstreamer-%{majorminor}/libgstwildmidi.so
 %endif
+
+%if %{with opencv}
+%files opencv
+# Plugins with external dependencies
+%{_libdir}/gstreamer-%{majorminor}/libgstopencv.so
+%{_libdir}/libgstopencv-%{majorminor}.so.0{,.*}
+%endif
+
+%if %{with openh264}
+%files -n gstreamer1-plugin-openh264
+%license COPYING
+%license ext/openh264/LICENSE
+%{_metainfodir}/gstreamer-openh264.appdata.xml
+%{_libdir}/gstreamer-1.0/libgstopenh264.so
+%endif
+
+%files libs
+%license COPYING
+%{_libdir}/libgstadaptivedemux-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstbasecamerabinsrc-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstbadaudio-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstcodecparsers-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstcodecs-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstcuda-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstinsertbin-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstisoff-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstmpegts-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstplay-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstplayer-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstphotography-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstsctp-%{majorminor}.so.0{,.*}
+%{_libdir}/libgsttranscoder-%{majorminor}.so.0{,.*}
+%{_libdir}/libgsturidownloader-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstvulkan-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstva-%{majorminor}.so.0{,.*}
+%{_libdir}/libgstwebrtc-%{majorminor}.so.0{,.*}
+%if %{with extras}
+%{_libdir}/libgstwebrtcnice-%{majorminor}.so.0{,.*}
+%endif
+%if 0%{?fedora} || 0%{?rhel} > 7
+%{_libdir}/libgstwayland-%{majorminor}.so.0{,.*}
+%endif
+
+%{_libdir}/girepository-1.0/CudaGst-1.0.typelib
+%{_libdir}/girepository-1.0/GstBadAudio-1.0.typelib
+%{_libdir}/girepository-1.0/GstCodecs-1.0.typelib
+%{_libdir}/girepository-1.0/GstCuda-1.0.typelib
+%{_libdir}/girepository-1.0/GstInsertBin-1.0.typelib
+%{_libdir}/girepository-1.0/GstMpegts-1.0.typelib
+%{_libdir}/girepository-1.0/GstPlay-1.0.typelib
+%{_libdir}/girepository-1.0/GstPlayer-1.0.typelib
+%{_libdir}/girepository-1.0/GstTranscoder-1.0.typelib
+%{_libdir}/girepository-1.0/GstVa-1.0.typelib
+%{_libdir}/girepository-1.0/GstVulkan-1.0.typelib
+%{_libdir}/girepository-1.0/GstVulkanWayland-1.0.typelib
+%{_libdir}/girepository-1.0/GstWebRTC-1.0.typelib
 
 %files devel
 %if 0
@@ -598,9 +704,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_datadir}/gir-1.0/GstPlay-%{majorminor}.gir
 %{_datadir}/gir-1.0/GstPlayer-%{majorminor}.gir
 %{_datadir}/gir-1.0/GstTranscoder-%{majorminor}.gir
-%if %{with extras}
 %{_datadir}/gir-1.0/GstVa-%{majorminor}.gir
-%endif
 %{_datadir}/gir-1.0/GstVulkan-%{majorminor}.gir
 %{_datadir}/gir-1.0/GstVulkanWayland-%{majorminor}.gir
 %{_datadir}/gir-1.0/GstWebRTC-%{majorminor}.gir
@@ -622,9 +726,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_libdir}/libgsttranscoder-%{majorminor}.so
 %{_libdir}/libgsturidownloader-%{majorminor}.so
 %{_libdir}/libgstvulkan-%{majorminor}.so
-%if %{with extras}
 %{_libdir}/libgstva-%{majorminor}.so
-%endif
 %{_libdir}/libgstwebrtc-%{majorminor}.so
 %if %{with extras}
 %{_libdir}/libgstwebrtcnice-%{majorminor}.so
@@ -647,9 +749,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_includedir}/gstreamer-%{majorminor}/gst/sctp
 %{_includedir}/gstreamer-%{majorminor}/gst/transcoder
 %{_includedir}/gstreamer-%{majorminor}/gst/uridownloader
-%if %{with extras}
 %{_includedir}/gstreamer-%{majorminor}/gst/va/
-%endif
 %{_includedir}/gstreamer-%{majorminor}/gst/vulkan/
 %{_includedir}/gstreamer-%{majorminor}/gst/wayland/
 %{_includedir}/gstreamer-%{majorminor}/gst/webrtc/
@@ -666,9 +766,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 %{_libdir}/pkgconfig/gstreamer-plugins-bad-%{majorminor}.pc
 %{_libdir}/pkgconfig/gstreamer-sctp-%{majorminor}.pc
 %{_libdir}/pkgconfig/gstreamer-transcoder-%{majorminor}.pc
-%if %{with extras}
 %{_libdir}/pkgconfig/gstreamer-va-%{majorminor}.pc
-%endif
 %{_libdir}/pkgconfig/gstreamer-vulkan-%{majorminor}.pc
 %{_libdir}/pkgconfig/gstreamer-vulkan-wayland-%{majorminor}.pc
 %{_libdir}/pkgconfig/gstreamer-wayland-%{majorminor}.pc
@@ -679,43 +777,171 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 
 
 %changelog
-* Wed Jan 17 2024 Wim Taymans <wtaymans@redhat.com> - 1.22.1-4
-- CVE-2023-40474: Integer overflow leading to heap overwrite in MXF
-- CVE-2023-40475: Integer overflow leading to heap overwrite in MXF
-- CVE-2023-40476: Integer overflow in H.265 video parser
-- ZDI-CAN-22300: buffer overflow vulnerability
-- Resolves: RHEL-19501, RHEL-19505, RHEL-19506, RHEL-20201
+* Sat Nov 09 2024 Wim Taymans <wtaymans@redhat.com> - 1.22.12-3
+- Rebuild
+- Resolves: RHEL-38511, RHEL-41157
 
-* Thu Jan 11 2024 Wim Taymans <wtaymans@redhat.com> - 1.22.1-3
-- Bump version
-- Resolves: RHEL-16795, RHEL-16788
+* Fri Nov 08 2024 Wim Taymans <wtaymans@redhat.com> - 1.22.12-2
+- Rebuild
+- Resolves: RHEL-38511, RHEL-41157
 
-* Tue Dec 12 2023 Wim Taymans <wtaymans@redhat.com> - 1.22.1-2
-- Patch CVE-2023-44429: AV1 codec parser heap-based buffer overflow
-- Patch CVE-2023-44446: MXF demuxer use-after-free
-- Resolves: RHEL-17030, RHEL-17039
+* Tue Apr 30 2024 Gwyn Ciesla <gwync@protonmail.com> - 1.22.12-1
+- 1.22.12
 
-* Thu Apr 13 2023 Wim Taymans <wtaymans@redhat.com> - 1.22.1-1
+* Thu Apr 18 2024 Gwyn Ciesla <gwync@protonmail.com> - 1.22.11-1
+- 1.22.11
+
+* Thu Feb 08 2024 Kalev Lember <klember@redhat.com> - 1.22.9-3
+- Add gstreamer1-plugin-openh264 subpackage with the openh264 plugin
+
+* Tue Feb 06 2024 Yaakov Selkowitz <yselkowi@redhat.com> - 1.22.9-2
+- Rebuilt for opencv-4.9.0
+
+* Thu Jan 25 2024 Gwyn Ciesla <gwync@protonmail.com> - 1.22.9-1
+- 1.22.9
+
+* Wed Jan 24 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.22.8-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
+
+* Sat Jan 20 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.22.8-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
+
+* Mon Jan 08 2024 Yaakov Selkowitz <yselkowi@redhat.com> - 1.22.8-3
+- Backport of "va: fixes for Mesa driver"
+- Resolves: rhbz#2256693
+
+* Wed Dec 20 2023 Yaakov Selkowitz <yselkowi@redhat.com> - 1.22.8-2
+- Enable dvbsuboverlay and siren plugins
+- Enable avtp, dtsdec, and flite plugins in extras
+
+* Mon Dec 18 2023 Gwyn Ciesla <gwync@protonmail.com> - 1.22.8-1
+- 1.22.8
+
+* Tue Nov 21 2023 Michael Catanzaro <mcatanzaro@redhat.com> - 1.22.7-2
+- Move gstva from extras into main package
+
+* Tue Nov 14 2023 Gwyn Ciesla <gwync@protonmail.com> - 1.22.7-1
+- 1.22.7
+
+* Fri Sep 22 2023 Yaakov Selkowitz <yselkowi@redhat.com> - 1.22.5-2
+- Separate libs subpackage
+- Enable opencv as separate subpackage
+
+* Fri Jul 21 2023 Wim Taymans <wtaymans@redhat.com> - 1.22.5-1
+- Update to 1.22.5
+
+* Thu Jul 20 2023 Fedora Release Engineering <releng@fedoraproject.org> - 1.22.3-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_39_Mass_Rebuild
+
+* Thu May 25 2023 Wim Taymans <wtaymans@redhat.com> - 1.22.3-1
+- Update to 1.22.3
+
+* Sun May 21 2023 Sérgio Basto <sergio@serjux.com> - 1.22.2-4
+- Remove obsolete of plugins-bad-freeworld to workaround a dnf bug
+  https://bugzilla.redhat.com/show_bug.cgi?id=1867376#c9
+
+* Thu Apr 27 2023 Yaakov Selkowitz <yselkowi@redhat.com> - 1.22.2-3
+- Fix migration of musepack and voamrwbenc to -bad-free-extras
+
+* Mon Apr 24 2023 Yaakov Selkowitz <yselkowi@redhat.com> - 1.22.2-2
+- Enable musepack and voamrwbenc in extras
+
+* Thu Apr 13 2023 Wim Taymans <wtaymans@redhat.com> - 1.22.2-1
+- Update to 1.22.2
+
+* Mon Mar 13 2023 Wim Taymans <wtaymans@redhat.com> - 1.22.1-1
 - Update to 1.22.1
 
-* Mon Nov 07 2022 Tomas Popela <tpopela@redhat.com> - 1.18.4-6
-- Fix FTBFS by BR wayland-protocols-devel
-- Resolves: rhbz#2140540
+* Tue Jan 24 2023 Wim Taymans <wtaymans@redhat.com> - 1.22.0-1
+- Update to 1.22.0
 
-* Mon Aug 09 2021 Mohan Boddu <mboddu@redhat.com>
-- Rebuilt for IMA sigs, glibc 2.34, aarch64 flags
-  Related: rhbz#1991688
+* Fri Jan 20 2023 Wim Taymans <wtaymans@redhat.com> - 1.21.90-1
+- Update to 1.21.90
 
-* Wed Jun 16 2021 Mohan Boddu <mboddu@redhat.com>
-- Rebuilt for RHEL 9 BETA for openssl 3.0
-  Related: rhbz#1971065
+* Thu Jan 19 2023 Fedora Release Engineering <releng@fedoraproject.org> - 1.20.5-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_38_Mass_Rebuild
 
-* Mon Jun 07 2021 Wim Taymans <wtaymans@redhat.com> - 1.18.4-3
-- Apply vulkan multilib patch
-- Resolves: rhbz#1915341
+* Wed Jan 11 2023 Wim Taymans <wtaymans@redhat.com> - 1.20.5-1
+- Update to 1.20.5
+- Remove unwanted crypto dependencies.
 
-* Fri Apr 16 2021 Mohan Boddu <mboddu@redhat.com>
-- Rebuilt for RHEL 9 BETA on Apr 15th 2021. Related: rhbz#1947937
+* Mon Nov 14 2022 Stephen Gallagher <sgallagh@redhat.com> - 1.20.4-2
+- Drop vdpau configure option
+- The libgstva plugin is now excluded from file listings when disabled
+- Resolves: rhbz#2141093
+
+* Thu Oct 13 2022 Wim Taymans <wtaymans@redhat.com> - 1.20.4-1
+- Update to 1.20.4
+
+* Thu Jul 21 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1.20.3-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
+
+* Mon Jul 18 2022 Wim Taymans <wtaymans@redhat.com> - 1.20.3-1
+- Update to 1.20.3
+
+* Wed Jun 22 2022 Robert-André Mauchin <zebob.m@gmail.com> - 1.20.0-4
+- Rebuilt for new aom
+
+* Sat Jun 18 2022 Scott Talbert <swt@techie.net> - 1.20.0-3
+- Rebuild for srt-1.5.0 (#2097636, #2098341)
+
+* Fri May 20 2022 Sandro Mani <manisandro@gmail.com> - 1.20.0-2
+- Rebuild for gdal-3.5.0 and/or openjpeg-2.5.0
+
+* Fri Feb 4 2022 Wim Taymans <wtaymans@redhat.com> - 1.20.0-1
+- Update to 1.20.0
+
+* Thu Feb 03 2022 Scott Talbert <swt@techie.net> - 1.19.3-6
+- Enable rtmp2 plugin (#1915517)
+
+* Thu Jan 20 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1.19.3-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_36_Mass_Rebuild
+
+* Mon Jan 10 2022 Scott Talbert <swt@techie.net> - 1.19.3-4
+- Fix GstPlayer with GstPlayerVideoOverlayVideoRenderer (#2035937)
+
+* Mon Jan 10 2022 Scott Talbert <swt@techie.net> - 1.19.3-3
+- Add BR for wayland-protocols-devel to fix another FTBFS
+
+* Mon Nov 22 2021 Scott Talbert <swt@techie.net> - 1.19.3-2
+- Fix FTBFS with meson 0.60.1 (#2025782)
+
+* Thu Nov 11 2021 Wim Taymans <wtaymans@redhat.com> - 1.19.3-1
+- Update to 1.19.3
+- Remove ofa plugin, is was removed
+
+* Thu Sep 23 2021 Wim Taymans <wtaymans@redhat.com> - 1.19.2-1
+- Update to 1.19.2
+
+* Tue Sep 14 2021 Sahana Prasad <sahana@redhat.com> - 1.19.1-8
+- Rebuilt with OpenSSL 3.0.0
+
+* Sat Aug 21 2021 Richard Shaw <hobbes1069@gmail.com> - 1.19.1-7
+- Rebuild for OpenEXR/Imath 3.1.
+
+* Tue Aug 10 2021 Richard Shaw <hobbes1069@gmail.com> - 1.19.1-6
+- Rebuild for OpenEXR 3.
+
+* Thu Jul 22 2021 Fedora Release Engineering <releng@fedoraproject.org> - 1.19.1-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_35_Mass_Rebuild
+
+* Mon Jul 19 2021 Wim Taymans <wtaymans@redhat.com> - 1.19.1-4
+- Enable sctp plugin
+
+* Mon Jun 21 2021 Gwyn Ciesla <gwync@protonmail.com> - 1.19.1-3
+- Fluidsynth rebuild.
+
+* Sun Jun 13 2021 Robert-André Mauchin <zebob.m@gmail.com> - 1.19.1-2
+- Rebuilt for aom v3.1.1
+
+* Thu Jun 03 2021 Wim Taymans <wtaymans@redhat.com> - 1.19.1-1
+- Update to 1.19.1
+
+* Wed May 26 2021 Nicolas Chauvet <kwizart@gmail.com> - 1.18.4-3
+- Rebuilt for srt
+
+* Tue Apr 6 2021 Wim Taymans <wtaymans@redhat.com> - 1.18.4-2
+- Add patch to fix multilib issues with vulkan (#1915341)
 
 * Tue Mar 16 2021 Wim Taymans <wtaymans@redhat.com> - 1.18.4-1
 - Update to 1.18.4
