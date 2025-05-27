@@ -12,7 +12,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.22.12
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -33,6 +33,7 @@ Source1:        gst-p-bad-cleanup.sh
 Patch:          openh264-add-license-file.patch
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/5780
 Patch:          openh264-drop-runtime-version-checks.patch
+Patch:          0001-h265parser-Fix-max_dec_pic_buffering_minus1-bound-ch.patch
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -777,6 +778,10 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 
 
 %changelog
+* Mon May 26 2025 Wim Taymans <wtaymans@redhat.com> - 1.22.12-4
+- fix for CVE-2025-3887
+  Resolves: RHEL-93063
+
 * Sat Nov 09 2024 Wim Taymans <wtaymans@redhat.com> - 1.22.12-3
 - Rebuild
 - Resolves: RHEL-38511, RHEL-41157
