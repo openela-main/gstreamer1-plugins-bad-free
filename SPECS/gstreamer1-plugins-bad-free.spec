@@ -15,7 +15,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.24.11
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -37,6 +37,10 @@ Patch:          openh264-add-license-file.patch
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/8884
 Patch:          fix-CVE-2025-3887.patch
 
+Patch:          0001-dvbsuboverlay-Mark-parsed-byte-array-as-const.patch
+Patch:          0002-dvbsuboverlay-Add-missing-bounds-checks-to-the-parse.patch
+Patch:          0003-dvbsuboverlay-Avoid-integer-overflows-and-unreasonab.patch
+Patch:          0004-libs-jpegparser-boundary-checks-before-copying-it.patch
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -818,9 +822,13 @@ EOF
 
 
 %changelog
+* Mon May 30 2026 Wim Taymans <wtaymans@redhat.com> - 1.24.11-3
+- fix for CVE-2026-2923, CVE-2026-3082
+  Resolves: RHEL-156111, RHEL-156158
+
 * Mon May 26 2025 Wim Taymans <wtaymans@redhat.com> - 1.24.11-2
 - fix for CVE-2025-3887
-  Resolves: RHEL-93044
+  Resolves: RHEL-93045
 
 * Tue Jan 14 2025 Wim Taymans <wtaymans@redhat.com> - 1.24.11-1
 - Update to 1.24.11
