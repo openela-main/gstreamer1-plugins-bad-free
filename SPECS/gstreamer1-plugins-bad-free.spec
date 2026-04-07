@@ -14,7 +14,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.16.1
-Release:        5%{?gitcommit:.git%{shortcommit}}%{?dist}
+Release:        6%{?gitcommit:.git%{shortcommit}}%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -37,6 +37,7 @@ Patch1:		0003-mxfdemux-Fix-integer-overflow-causing-out-of-bounds-.patch
 Patch2:		0004-mxfdemux-Check-number-of-channels-for-AES3-audio.patch
 Patch3:		0005-h265parser-Fix-possible-overflow-using-max_sub_layer.patch
 Patch4:         0001-h265parser-Fix-max_dec_pic_buffering_minus1-bound-ch.patch
+Patch5:         0001-libs-jpegparser-boundary-checks-before-copying-it.patch
 
 BuildRequires:  gstreamer1-devel >= %{version}
 BuildRequires:  gstreamer1-plugins-base-devel >= %{version}
@@ -194,6 +195,7 @@ aren't tested well enough, or the code is not of good enough quality.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
+%patch5 -p1
 
 %build
 %configure --disable-silent-rules --disable-fatal-warnings \
@@ -482,6 +484,10 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -fv {} ';'
 
 
 %changelog
+* Tue Mar 31 2026 Wim Taymans <wtaymans@redhat.com> - 1.16.1-6
+- Add patch for CVE-2026-3082
+  Resolves: RHEL-156202
+
 * Mon May 26 2025 Wim Taymans <wtaymans@redhat.com> - 1.16.1-5
 - fix for CVE-2025-3887
   Resolves: RHEL-93051
