@@ -1,4 +1,4 @@
-From f2d874be5e3e6edab6167ba8213ee5abb10acfcb Mon Sep 17 00:00:00 2001
+From e0eb8a3227b7cba80939aaeb953e5d1229f695a4 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Sebastian=20Dr=C3=B6ge?= <sebastian@centricular.com>
 Date: Wed, 25 Feb 2026 17:22:52 +0200
 Subject: [PATCH 1/4] dvbsuboverlay: Mark parsed byte array as const
@@ -10,10 +10,10 @@ Part-of: <https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/10
  2 files changed, 12 insertions(+), 11 deletions(-)
 
 diff --git a/subprojects/gst-plugins-bad/gst/dvbsuboverlay/dvb-sub.c b/subprojects/gst-plugins-bad/gst/dvbsuboverlay/dvb-sub.c
-index 6a0b322c03..e7328033ac 100644
+index c3ed520513..d49828929c 100644
 --- a/subprojects/gst-plugins-bad/gst/dvbsuboverlay/dvb-sub.c
 +++ b/subprojects/gst-plugins-bad/gst/dvbsuboverlay/dvb-sub.c
-@@ -361,8 +361,8 @@ dvb_sub_init (void)
+@@ -373,8 +373,8 @@ dvb_sub_init (void)
  }
  
  static void
@@ -24,7 +24,7 @@ index 6a0b322c03..e7328033ac 100644
  {                               /* FIXME: Use guint for buf_size here and in many other places? */
    DVBSubRegionDisplay *display;
    DVBSubRegionDisplay *tmp_display_list, **tmp_ptr;
-@@ -439,8 +439,8 @@ _dvb_sub_parse_page_segment (DvbSub * dvb_sub, guint16 page_id, guint8 * buf,
+@@ -451,8 +451,8 @@ _dvb_sub_parse_page_segment (DvbSub * dvb_sub, guint16 page_id, guint8 * buf,
  }
  
  static void
@@ -35,7 +35,7 @@ index 6a0b322c03..e7328033ac 100644
  {
    const guint8 *buf_end = buf + buf_size;
    guint8 region_id;
-@@ -562,8 +562,8 @@ _dvb_sub_parse_region_segment (DvbSub * dvb_sub, guint16 page_id, guint8 * buf,
+@@ -574,8 +574,8 @@ _dvb_sub_parse_region_segment (DvbSub * dvb_sub, guint16 page_id, guint8 * buf,
  }
  
  static void
@@ -46,7 +46,7 @@ index 6a0b322c03..e7328033ac 100644
  {
    const guint8 *buf_end = buf + buf_size;
    guint8 clut_id;
-@@ -1064,8 +1064,8 @@ _dvb_sub_parse_pixel_data_block (DvbSub * dvb_sub,
+@@ -1076,8 +1076,8 @@ _dvb_sub_parse_pixel_data_block (DvbSub * dvb_sub,
  }
  
  static void
@@ -57,7 +57,7 @@ index 6a0b322c03..e7328033ac 100644
  {
    const guint8 *buf_end = buf + buf_size;
    guint object_id;
-@@ -1135,7 +1135,7 @@ _dvb_sub_parse_object_segment (DvbSub * dvb_sub, guint16 page_id, guint8 * buf,
+@@ -1147,7 +1147,7 @@ _dvb_sub_parse_object_segment (DvbSub * dvb_sub, guint16 page_id, guint8 * buf,
  }
  
  static gint
@@ -66,7 +66,7 @@ index 6a0b322c03..e7328033ac 100644
      gint buf_size)
  {
    int dds_version, info_byte;
-@@ -1374,7 +1374,8 @@ dvb_sub_free (DvbSub * sub)
+@@ -1386,7 +1386,8 @@ dvb_sub_free (DvbSub * sub)
   *				  0 or positive if data was handled. If positive, then amount of data consumed on success. FIXME: List the positive return values.
   */
  gint

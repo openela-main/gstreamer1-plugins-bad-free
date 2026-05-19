@@ -1,4 +1,4 @@
-From e3e08ac617fd387571d242118580205417ea6cbb Mon Sep 17 00:00:00 2001
+From 63fa69ec181f5defeb1193458b9322206ced4b85 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Sebastian=20Dr=C3=B6ge?= <sebastian@centricular.com>
 Date: Wed, 11 Feb 2026 20:45:12 +0200
 Subject: [PATCH 2/4] dvbsuboverlay: Add missing bounds checks to the parser
@@ -14,10 +14,10 @@ Part-of: <https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/10
  1 file changed, 109 insertions(+), 77 deletions(-)
 
 diff --git a/subprojects/gst-plugins-bad/gst/dvbsuboverlay/dvb-sub.c b/subprojects/gst-plugins-bad/gst/dvbsuboverlay/dvb-sub.c
-index e7328033ac..41dd0ba34b 100644
+index d49828929c..9d7704b86d 100644
 --- a/subprojects/gst-plugins-bad/gst/dvbsuboverlay/dvb-sub.c
 +++ b/subprojects/gst-plugins-bad/gst/dvbsuboverlay/dvb-sub.c
-@@ -573,6 +573,9 @@ _dvb_sub_parse_clut_segment (DvbSub * dvb_sub, guint16 page_id,
+@@ -585,6 +585,9 @@ _dvb_sub_parse_clut_segment (DvbSub * dvb_sub, guint16 page_id,
  
    GST_MEMDUMP ("DVB clut packet", buf, buf_size);
  
@@ -27,7 +27,7 @@ index e7328033ac..41dd0ba34b 100644
    clut_id = *buf++;
    buf += 1;
  
-@@ -589,7 +592,7 @@ _dvb_sub_parse_clut_segment (DvbSub * dvb_sub, guint16 page_id,
+@@ -601,7 +604,7 @@ _dvb_sub_parse_clut_segment (DvbSub * dvb_sub, guint16 page_id,
      dvb_sub->clut_list = clut;
    }
  
@@ -36,7 +36,7 @@ index e7328033ac..41dd0ba34b 100644
      entry_id = *buf++;
  
      depth = (*buf) & 0xe0;
-@@ -602,11 +605,15 @@ _dvb_sub_parse_clut_segment (DvbSub * dvb_sub, guint16 page_id,
+@@ -614,11 +617,15 @@ _dvb_sub_parse_clut_segment (DvbSub * dvb_sub, guint16 page_id,
      full_range = (*buf++) & 1;
  
      if (full_range) {
@@ -52,7 +52,7 @@ index e7328033ac..41dd0ba34b 100644
        y = buf[0] & 0xfc;
        cr = (((buf[0] & 3) << 2) | ((buf[1] >> 6) & 3)) << 4;
        cb = (buf[1] << 2) & 0xf0;
-@@ -621,11 +628,11 @@ _dvb_sub_parse_clut_segment (DvbSub * dvb_sub, guint16 page_id,
+@@ -633,11 +640,11 @@ _dvb_sub_parse_clut_segment (DvbSub * dvb_sub, guint16 page_id,
      GST_DEBUG ("CLUT DEFINITION: clut %d := (%d,%d,%d,%d)", entry_id, y, cb, cr,
          alpha);
  
@@ -67,7 +67,7 @@ index e7328033ac..41dd0ba34b 100644
        clut->clut256[entry_id] = AYUV (y, cb, cr, 255 - alpha);
    }
  }
-@@ -637,8 +644,6 @@ _dvb_sub_read_2bit_string (guint8 * destbuf, gint dbuf_len,
+@@ -649,8 +656,6 @@ _dvb_sub_read_2bit_string (guint8 * destbuf, gint dbuf_len,
      const guint8 ** srcbuf, gint buf_size, guint8 non_mod, guint8 * map_table)
  {
    GstBitReader gb = GST_BIT_READER_INIT (*srcbuf, buf_size);
@@ -76,7 +76,7 @@ index e7328033ac..41dd0ba34b 100644
    gboolean stop_parsing = FALSE;
    guint32 bits = 0;
    guint32 pixels_read = 0;
-@@ -649,23 +654,29 @@ _dvb_sub_read_2bit_string (guint8 * destbuf, gint dbuf_len,
+@@ -661,23 +666,29 @@ _dvb_sub_read_2bit_string (guint8 * destbuf, gint dbuf_len,
    while (!stop_parsing && (gst_bit_reader_get_remaining (&gb) > 1)) {
      guint run_length = 0, clut_index = 0;
  
@@ -112,7 +112,7 @@ index e7328033ac..41dd0ba34b 100644
            switch (bits) {       /* switch_3 */
              case 0x0:          /* end of 2-bit/pixel_code_string */
                stop_parsing = TRUE;
-@@ -674,14 +685,18 @@ _dvb_sub_read_2bit_string (guint8 * destbuf, gint dbuf_len,
+@@ -686,14 +697,18 @@ _dvb_sub_read_2bit_string (guint8 * destbuf, gint dbuf_len,
                run_length = 2;
                break;
              case 0x2:          /* the following 6 bits contain run length coded pixel data */
@@ -135,7 +135,7 @@ index e7328033ac..41dd0ba34b 100644
                break;
            }
          }
-@@ -715,13 +730,18 @@ _dvb_sub_read_2bit_string (guint8 * destbuf, gint dbuf_len,
+@@ -727,13 +742,18 @@ _dvb_sub_read_2bit_string (guint8 * destbuf, gint dbuf_len,
      pixels_read += run_length;
    }
  
@@ -157,7 +157,7 @@ index e7328033ac..41dd0ba34b 100644
  }
  
  // FFMPEG-FIXME: The same code in ffmpeg is much more complex, it could use the same
-@@ -731,7 +751,6 @@ _dvb_sub_read_4bit_string (guint8 * destbuf, gint dbuf_len,
+@@ -743,7 +763,6 @@ _dvb_sub_read_4bit_string (guint8 * destbuf, gint dbuf_len,
      const guint8 ** srcbuf, gint buf_size, guint8 non_mod, guint8 * map_table)
  {
    GstBitReader gb = GST_BIT_READER_INIT (*srcbuf, buf_size);
@@ -165,7 +165,7 @@ index e7328033ac..41dd0ba34b 100644
    gboolean stop_parsing = FALSE;
    guint32 bits = 0;
    guint32 pixels_read = 0;
-@@ -743,28 +762,35 @@ _dvb_sub_read_4bit_string (guint8 * destbuf, gint dbuf_len,
+@@ -755,28 +774,35 @@ _dvb_sub_read_4bit_string (guint8 * destbuf, gint dbuf_len,
    while (!stop_parsing && (gst_bit_reader_get_remaining (&gb) > 3)) {
      guint run_length = 0, clut_index = 0;
  
@@ -208,7 +208,7 @@ index e7328033ac..41dd0ba34b 100644
            switch (bits) {
              case 0x0:          /* switch_3 == '00' */
                run_length = 1;   /* 1 pixel of pseudo-color 0 */
-@@ -773,14 +799,18 @@ _dvb_sub_read_4bit_string (guint8 * destbuf, gint dbuf_len,
+@@ -785,14 +811,18 @@ _dvb_sub_read_4bit_string (guint8 * destbuf, gint dbuf_len,
                run_length = 2;   /* 2 pixels of pseudo-color 0 */
                break;
              case 0x2:          /* switch_3 == '10' */
@@ -231,7 +231,7 @@ index e7328033ac..41dd0ba34b 100644
                break;
            }
          }
-@@ -814,14 +844,19 @@ _dvb_sub_read_4bit_string (guint8 * destbuf, gint dbuf_len,
+@@ -826,14 +856,19 @@ _dvb_sub_read_4bit_string (guint8 * destbuf, gint dbuf_len,
      pixels_read += run_length;
    }
  
@@ -254,7 +254,7 @@ index e7328033ac..41dd0ba34b 100644
  }
  
  static int
-@@ -829,8 +864,6 @@ _dvb_sub_read_8bit_string (guint8 * destbuf, gint dbuf_len,
+@@ -841,8 +876,6 @@ _dvb_sub_read_8bit_string (guint8 * destbuf, gint dbuf_len,
      const guint8 ** srcbuf, gint buf_size, guint8 non_mod, guint8 * map_table)
  {
    GstBitReader gb = GST_BIT_READER_INIT (*srcbuf, buf_size);
@@ -263,7 +263,7 @@ index e7328033ac..41dd0ba34b 100644
    gboolean stop_parsing = FALSE;
    guint32 bits = 0;
    guint32 pixels_read = 0;
-@@ -846,23 +879,29 @@ _dvb_sub_read_8bit_string (guint8 * destbuf, gint dbuf_len,
+@@ -858,23 +891,29 @@ _dvb_sub_read_8bit_string (guint8 * destbuf, gint dbuf_len,
    /* Rephrased - it's better to work with bytes with default value '0' instead of reading from memory we don't own. */
    while (!stop_parsing && (gst_bit_reader_get_remaining (&gb) > 7)) {
      guint run_length = 0, clut_index = 0;
@@ -298,7 +298,7 @@ index e7328033ac..41dd0ba34b 100644
  
          if (run_length < 3) {
            GST_WARNING ("runlength value was %u, but the spec requires it "
-@@ -900,10 +939,17 @@ _dvb_sub_read_8bit_string (guint8 * destbuf, gint dbuf_len,
+@@ -912,10 +951,17 @@ _dvb_sub_read_8bit_string (guint8 * destbuf, gint dbuf_len,
  
    GST_LOG ("Returning with %u pixels read", pixels_read);
  
@@ -317,7 +317,7 @@ index e7328033ac..41dd0ba34b 100644
  }
  
  static void
-@@ -916,7 +962,6 @@ _dvb_sub_parse_pixel_data_block (DvbSub * dvb_sub,
+@@ -928,7 +974,6 @@ _dvb_sub_parse_pixel_data_block (DvbSub * dvb_sub,
    guint8 *pbuf;
    int x_pos, y_pos;
    int i;
@@ -325,7 +325,7 @@ index e7328033ac..41dd0ba34b 100644
  
    guint8 map2to4[] = { 0x0, 0x7, 0x8, 0xf };
    guint8 map2to8[] = { 0x00, 0x77, 0x88, 0xff };
-@@ -951,24 +996,13 @@ _dvb_sub_parse_pixel_data_block (DvbSub * dvb_sub,
+@@ -963,24 +1008,13 @@ _dvb_sub_parse_pixel_data_block (DvbSub * dvb_sub,
  
      // FFMPEG-FIXME: ffmpeg doesn't check for equality and so can overflow destination buffer later on with bad input data
      // FFMPEG-FIXME: However that makes it warn on end_of_object_line and map tables as well, so we add the dest_buf_filled tracking
@@ -353,7 +353,7 @@ index e7328033ac..41dd0ba34b 100644
          if (region->depth == 8)
            map_table = map2to8;
          else if (region->depth == 4)
-@@ -983,15 +1017,6 @@ _dvb_sub_parse_pixel_data_block (DvbSub * dvb_sub,
+@@ -995,15 +1029,6 @@ _dvb_sub_parse_pixel_data_block (DvbSub * dvb_sub,
              region->width - x_pos, &buf, buf_end - buf, non_mod, map_table);
          break;
        case 0x11:
@@ -369,7 +369,7 @@ index e7328033ac..41dd0ba34b 100644
          if (region->depth < 4) {
            GST_WARNING ("4-bit pixel string in %d-bit region!", region->depth);
            return;
-@@ -1012,15 +1037,6 @@ _dvb_sub_parse_pixel_data_block (DvbSub * dvb_sub,
+@@ -1024,15 +1049,6 @@ _dvb_sub_parse_pixel_data_block (DvbSub * dvb_sub,
          GST_DEBUG ("READ_4BIT_STRING finished: buf pointer now %p", buf);
          break;
        case 0x12:
@@ -385,7 +385,7 @@ index e7328033ac..41dd0ba34b 100644
          if (region->depth < 8) {
            GST_WARNING ("8-bit pixel string in %d-bit region!", region->depth);
            return;
-@@ -1034,19 +1050,29 @@ _dvb_sub_parse_pixel_data_block (DvbSub * dvb_sub,
+@@ -1046,19 +1062,29 @@ _dvb_sub_parse_pixel_data_block (DvbSub * dvb_sub,
  
        case 0x20:
          GST_DEBUG ("handling map2to4 table data");
@@ -417,7 +417,7 @@ index e7328033ac..41dd0ba34b 100644
          GST_DEBUG ("handling map4to8 table data");
          for (i = 0; i < 16; i++)
            map4to8[i] = *buf++;
-@@ -1073,6 +1099,9 @@ _dvb_sub_parse_object_segment (DvbSub * dvb_sub, guint16 page_id,
+@@ -1085,6 +1111,9 @@ _dvb_sub_parse_object_segment (DvbSub * dvb_sub, guint16 page_id,
  
    guint8 coding_method, non_modifying_color;
  
@@ -427,7 +427,7 @@ index e7328033ac..41dd0ba34b 100644
    object_id = GST_READ_UINT16_BE (buf);
    buf += 2;
  
-@@ -1095,6 +1124,9 @@ _dvb_sub_parse_object_segment (DvbSub * dvb_sub, guint16 page_id,
+@@ -1107,6 +1136,9 @@ _dvb_sub_parse_object_segment (DvbSub * dvb_sub, guint16 page_id,
      DVBSubObjectDisplay *display;
      guint16 top_field_len, bottom_field_len;
  

@@ -1,4 +1,4 @@
-From 9fdae1520028e20520d8c0fbd85b8631d6ce94f7 Mon Sep 17 00:00:00 2001
+From d569264a87740fc5fac702a90d8546ce5dfb15e4 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?V=C3=ADctor=20Manuel=20J=C3=A1quez=20Leal?=
  <vjaquez@igalia.com>
 Date: Wed, 11 Feb 2026 22:07:49 +0100
@@ -23,10 +23,10 @@ Part-of: <https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/10
  1 file changed, 4 insertions(+)
 
 diff --git a/subprojects/gst-plugins-bad/gst-libs/gst/codecparsers/gstjpegparser.c b/subprojects/gst-plugins-bad/gst-libs/gst/codecparsers/gstjpegparser.c
-index 64110763f2..86125b3747 100644
+index 0cb5d0b739..fd66f6cfdf 100644
 --- a/subprojects/gst-plugins-bad/gst-libs/gst/codecparsers/gstjpegparser.c
 +++ b/subprojects/gst-plugins-bad/gst-libs/gst/codecparsers/gstjpegparser.c
-@@ -79,6 +79,10 @@ ensure_debug_category (void)
+@@ -77,6 +77,10 @@ ensure_debug_category (void)
  
  #define READ_BYTES(reader, buf, length) G_STMT_START {          \
      const guint8 *vals;                                         \

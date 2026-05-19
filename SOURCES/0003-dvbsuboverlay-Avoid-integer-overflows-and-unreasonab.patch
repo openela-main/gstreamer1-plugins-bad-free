@@ -1,4 +1,4 @@
-From 05502643bdd8bb91c691f28d67d3eda11e322349 Mon Sep 17 00:00:00 2001
+From ff291516bd4f51610b2914ebc72a7d238233bad2 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Sebastian=20Dr=C3=B6ge?= <sebastian@centricular.com>
 Date: Thu, 12 Feb 2026 09:50:23 +0200
 Subject: [PATCH 3/4] dvbsuboverlay: Avoid integer overflows and unreasonably
@@ -10,10 +10,10 @@ Part-of: <https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/10
  1 file changed, 23 insertions(+)
 
 diff --git a/subprojects/gst-plugins-bad/gst/dvbsuboverlay/dvb-sub.c b/subprojects/gst-plugins-bad/gst/dvbsuboverlay/dvb-sub.c
-index 41dd0ba34b..8a3b46c56c 100644
+index 9d7704b86d..e44b8e2631 100644
 --- a/subprojects/gst-plugins-bad/gst/dvbsuboverlay/dvb-sub.c
 +++ b/subprojects/gst-plugins-bad/gst/dvbsuboverlay/dvb-sub.c
-@@ -471,6 +471,17 @@ _dvb_sub_parse_region_segment (DvbSub * dvb_sub, guint16 page_id,
+@@ -483,6 +483,17 @@ _dvb_sub_parse_region_segment (DvbSub * dvb_sub, guint16 page_id,
    region->height = GST_READ_UINT16_BE (buf);
    buf += 2;
  
@@ -31,7 +31,7 @@ index 41dd0ba34b..8a3b46c56c 100644
    if (region->width * region->height != region->buf_size) {     /* FIXME: Read closer from spec what happens when dimensions change */
      g_free (region->pbuf);
  
-@@ -1184,6 +1195,18 @@ _dvb_sub_parse_display_definition_segment (DvbSub * dvb_sub, const guint8 * buf,
+@@ -1196,6 +1207,18 @@ _dvb_sub_parse_display_definition_segment (DvbSub * dvb_sub, const guint8 * buf,
    display_height = GST_READ_UINT16_BE (buf) + 1;
    buf += 2;
  
