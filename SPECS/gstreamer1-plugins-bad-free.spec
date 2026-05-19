@@ -12,7 +12,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.22.12
-Release:        5%{?dist}
+Release:        7%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -34,7 +34,6 @@ Patch:          openh264-add-license-file.patch
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/5780
 Patch:          openh264-drop-runtime-version-checks.patch
 Patch:          0001-h265parser-Fix-max_dec_pic_buffering_minus1-bound-ch.patch
-
 Patch:          0001-dvbsuboverlay-Mark-parsed-byte-array-as-const.patch
 Patch:          0002-dvbsuboverlay-Add-missing-bounds-checks-to-the-parse.patch
 Patch:          0003-dvbsuboverlay-Avoid-integer-overflows-and-unreasonab.patch
@@ -783,9 +782,16 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 
 
 %changelog
-* Mon May 30 2026 Wim Taymans <wtaymans@redhat.com> - 1.22.12-5
+* Tue Mar 31 2026 Veronika Kabatova <vkabatov@redhat.com> - 1.22.12-7
+- Rebuild to fix missing binaries due to buildsystem oversight
+
+* Mon Mar 30 2026 Tomas Pelka <tpelka@redhat.com> - 1.22.12-6
+- Rebuild for z-stream
+  Resolves: RHEL-156256, RHEL-156259
+
+* Fri May 27 2026 Wim Taymans <wtaymans@redhat.com> - 1.22.12-5
 - fix for CVE-2026-2923, CVE-2026-3082
-  Resolves: RHEL-156231, RHEL-156248
+  Resolves: RHEL-156256, RHEL-156259
 
 * Mon May 26 2025 Wim Taymans <wtaymans@redhat.com> - 1.22.12-4
 - fix for CVE-2025-3887
