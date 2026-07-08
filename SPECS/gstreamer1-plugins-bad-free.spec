@@ -26,7 +26,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.26.7
-Release:        2%{?dist}
+Release:        2%{?dist}.4
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -45,6 +45,16 @@ Patch:          0001-dvbsuboverlay-Mark-parsed-byte-array-as-const.patch
 Patch:          0002-dvbsuboverlay-Add-missing-bounds-checks-to-the-parse.patch
 Patch:          0003-dvbsuboverlay-Avoid-integer-overflows-and-unreasonab.patch
 Patch:          0004-libs-jpegparser-boundary-checks-before-copying-it.patch
+# CVE-2026-52720
+# https://github.com/GStreamer/gstreamer/commit/1ca88138fb0f8562861956b66a0c98406bcb7370
+Patch:          0005-librfb-Validate-framebuffer-update-rectangles-agains.patch
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11877
+# https://github.com/GStreamer/gstreamer/commit/d30966b87f3a1358b01ec404607f6c9b2f10e9f7
+Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-52722.patch
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11805
+Patch:          0005-vajpegdecoder-Validate-that-enough-data-is-available.patch
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11803
+Patch:          0005-av1parser-Fix-bytes-bits-confusion-when-parsing-tile.patch
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -872,6 +882,23 @@ EOF
 
 
 %changelog
+* Tue Jun 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.4
+- Fix bytes/bits confusion in AV1 tile data size parsing (CVE-2026-52718)
+  Resolves: RHEL-184391
+
+* Mon Jun 22 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.3
+- Fix for CVE-2026-52719
+  Resolves: RHEL-184406
+
+* Fri Jun 19 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.2
+- Fix integer overflows in VMnc decoder (CVE-2026-52722)
+  Resolves: RHEL-184425
+
+* Fri Jun 19 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.1
+- Fix for CVE-2026-52720: validate framebuffer update rectangles
+  in VNC source plugin's RFB decoder
+  Resolves: RHEL-184462
+
 * Tue Mar 31 2026 Wim Taymans <wtaymans@redhat.com> - 1.26.7-2
 - Add patches for CVE-2026-2923 and CVE-2026-3082
   Resolves: RHEL-156114, RHEL-156172
