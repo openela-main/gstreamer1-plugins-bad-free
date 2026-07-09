@@ -14,7 +14,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.16.1
-Release:        6%{?gitcommit:.git%{shortcommit}}%{?dist}
+Release:        8%{?gitcommit:.git%{shortcommit}}%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -38,6 +38,10 @@ Patch2:		0004-mxfdemux-Check-number-of-channels-for-AES3-audio.patch
 Patch3:		0005-h265parser-Fix-possible-overflow-using-max_sub_layer.patch
 Patch4:         0001-h265parser-Fix-max_dec_pic_buffering_minus1-bound-ch.patch
 Patch5:         0001-libs-jpegparser-boundary-checks-before-copying-it.patch
+# https://github.com/GStreamer/gstreamer/commit/6c146775d784bbe91ff7afc6701ba351306282ce
+Patch6:         0001-vnmdec-Avoid-integer-overflows-when-rectangle-positi.patch
+# https://github.com/GStreamer/gstreamer/commit/f3b66928a194b32b27fac3c3379d3d20e5966442
+Patch7:         0001-librfb-Validate-framebuffer-update-rectangles-agains.patch
 
 BuildRequires:  gstreamer1-devel >= %{version}
 BuildRequires:  gstreamer1-plugins-base-devel >= %{version}
@@ -196,6 +200,8 @@ aren't tested well enough, or the code is not of good enough quality.
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
+%patch6 -p1
+%patch7 -p1
 
 %build
 %configure --disable-silent-rules --disable-fatal-warnings \
@@ -484,6 +490,15 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -fv {} ';'
 
 
 %changelog
+* Wed Jul 08 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.16.1-8
+- Fix for CVE-2026-52720: librfb framebuffer update rectangle
+  validation
+  Resolves: RHEL-184455
+
+* Mon Jun 22 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.16.1-7
+- Fix integer overflow in vmncdec (CVE-2026-52722)
+  Resolves: RHEL-184414
+
 * Tue Mar 31 2026 Wim Taymans <wtaymans@redhat.com> - 1.16.1-6
 - Add patch for CVE-2026-3082
   Resolves: RHEL-156202
