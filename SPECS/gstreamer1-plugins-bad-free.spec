@@ -12,7 +12,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.22.12
-Release:        7%{?dist}.1
+Release:        7%{?dist}.3
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -47,6 +47,10 @@ Patch:          0001-dvbsuboverlay-Mark-parsed-byte-array-as-const.patch
 Patch:          0002-dvbsuboverlay-Add-missing-bounds-checks-to-the-parse.patch
 Patch:          0003-dvbsuboverlay-Avoid-integer-overflows-and-unreasonab.patch
 Patch:          0004-libs-jpegparser-boundary-checks-before-copying-it.patch
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/945e139f8ffd2908bc75e0c0ea319ab6165fe0b0
+Patch:          gstreamer1-plugins-bad-free-1.22.12-CVE-2026-59692.patch
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12054
+Patch:          gstreamer1-plugins-bad-free-1.22.12-CVE-2026-59691.patch
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -791,6 +795,16 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 
 
 %changelog
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.22.12-7.3
+- Fix incorrect bytes-per-pixel handling in rfbsrc plugin
+  (CVE-2026-59691)
+  Resolves: RHEL-193557
+
+* Wed Jul 15 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.22.12-7.2
+- Fix buffer overflow in DTLS connection peer certificate
+  subject DN handling (CVE-2026-59692)
+  Resolves: RHEL-193572
+
 * Wed Jul 08 2026 Tomas Pelka <tpelka@redhat.com> - 1.22.12-7.1
 - Sync with c9s release -5..-7: fix for CVE-2026-2923, CVE-2026-3082
   in dvbsuboverlay and jpegparser
