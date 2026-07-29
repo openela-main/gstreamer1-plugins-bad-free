@@ -14,7 +14,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.16.1
-Release:        8%{?gitcommit:.git%{shortcommit}}%{?dist}
+Release:        9%{?gitcommit:.git%{shortcommit}}%{?dist}.1
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -42,6 +42,11 @@ Patch5:         0001-libs-jpegparser-boundary-checks-before-copying-it.patch
 Patch6:         0001-vnmdec-Avoid-integer-overflows-when-rectangle-positi.patch
 # https://github.com/GStreamer/gstreamer/commit/f3b66928a194b32b27fac3c3379d3d20e5966442
 Patch7:         0001-librfb-Validate-framebuffer-update-rectangles-agains.patch
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/85cdda978b01a8cf8227a64bbc5fba37b3df0cb3
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/340428be2a37e5131049dea35703ad47f4db631f
+Patch8:         0001-rfbsrc-CVE-2026-59691.patch
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/9bb455393b8ccb48e63027f3e30285f80cf3762c
+Patch9:         0001-dtlsconnection-CVE-2026-59692.patch
 
 BuildRequires:  gstreamer1-devel >= %{version}
 BuildRequires:  gstreamer1-plugins-base-devel >= %{version}
@@ -202,6 +207,8 @@ aren't tested well enough, or the code is not of good enough quality.
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+%patch8 -p1
+%patch9 -p1
 
 %build
 %configure --disable-silent-rules --disable-fatal-warnings \
@@ -490,6 +497,15 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -fv {} ';'
 
 
 %changelog
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.16.1-9.1
+- Fix buffer overflow in DTLS certificate subject DN handling
+  (CVE-2026-59692)
+  Resolves: RHEL-193570
+
+* Sat Jul 11 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.16.1-9
+- Fix rfbsrc/librfb vulnerabilities in rfbdecoder.c (CVE-2026-59691)
+  Resolves: RHEL-193559
+
 * Wed Jul 08 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.16.1-8
 - Fix for CVE-2026-52720: librfb framebuffer update rectangle
   validation
