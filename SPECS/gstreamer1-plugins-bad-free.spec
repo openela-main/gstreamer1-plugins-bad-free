@@ -26,7 +26,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.26.7
-Release:        2%{?dist}.4
+Release:        2%{?dist}.6
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -55,6 +55,12 @@ Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-52722.patch
 Patch:          0005-vajpegdecoder-Validate-that-enough-data-is-available.patch
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11803
 Patch:          0005-av1parser-Fix-bytes-bits-confusion-when-parsing-tile.patch
+# CVE-2026-59691
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12054
+Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-59691.patch
+# CVE-2026-59692
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12053
+Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-59692.patch
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -882,6 +888,11 @@ EOF
 
 
 %changelog
+* Sat Jul 11 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.5
+- Fix rfbsrc hextile and color read handling for non-32bpp
+  pixel formats (CVE-2026-59691)
+  Resolves: RHEL-193550
+
 * Tue Jun 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.4
 - Fix bytes/bits confusion in AV1 tile data size parsing (CVE-2026-52718)
   Resolves: RHEL-184391
