@@ -26,7 +26,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.26.7
-Release:        2%{?dist}.6
+Release:        2%{?dist}.7
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -61,6 +61,9 @@ Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-59691.patch
 # CVE-2026-59692
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12053
 Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-59692.patch
+# CVE-2026-19387
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12235
+Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-19387.patch
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -888,6 +891,10 @@ EOF
 
 
 %changelog
+* Mon Aug 10 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.7
+- Fix ADPCM decoder input validation (CVE-2026-19387)
+  Resolves: RHEL-235500
+
 * Sat Jul 11 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.5
 - Fix rfbsrc hextile and color read handling for non-32bpp
   pixel formats (CVE-2026-59691)
