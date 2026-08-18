@@ -12,7 +12,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.22.12
-Release:        7%{?dist}.3
+Release:        7%{?dist}.4
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -51,6 +51,8 @@ Patch:          0004-libs-jpegparser-boundary-checks-before-copying-it.patch
 Patch:          gstreamer1-plugins-bad-free-1.22.12-CVE-2026-59692.patch
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12054
 Patch:          gstreamer1-plugins-bad-free-1.22.12-CVE-2026-59691.patch
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12235
+Patch:          gstreamer1-plugins-bad-free-1.22.12-CVE-2026-19387.patch
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -795,6 +797,11 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 
 
 %changelog
+* Mon Aug 10 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.22.12-7.4
+- Fix ADPCM decoder negotiation and input size check
+  (CVE-2026-19387)
+  Resolves: RHEL-235496
+
 * Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.22.12-7.3
 - Fix incorrect bytes-per-pixel handling in rfbsrc plugin
   (CVE-2026-59691)
