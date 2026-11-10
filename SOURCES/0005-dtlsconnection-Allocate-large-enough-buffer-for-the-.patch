@@ -1,4 +1,4 @@
-From d3d10171b7bd0198f7436fc2553a6e645ede7362 Mon Sep 17 00:00:00 2001
+From e6761051343d2c5d61b6fd7b93bfb73ec8b5c97d Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Sebastian=20Dr=C3=B6ge?= <sebastian@centricular.com>
 Date: Thu, 25 Jun 2026 11:47:44 +0300
 Subject: [PATCH] dtlsconnection: Allocate large enough buffer for the peer
@@ -10,11 +10,11 @@ Fixes https://gitlab.freedesktop.org/gstreamer/gstreamer/-/work_items/5172
 
 Part-of: <https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12053>
 ---
- subprojects/gst-plugins-bad/ext/dtls/gstdtlsconnection.c | 21 +++++++++++++++++----
+ .../ext/dtls/gstdtlsconnection.c              | 21 +++++++++++++++----
  1 file changed, 17 insertions(+), 4 deletions(-)
 
 diff --git a/subprojects/gst-plugins-bad/ext/dtls/gstdtlsconnection.c b/subprojects/gst-plugins-bad/ext/dtls/gstdtlsconnection.c
-index eaf77c3..4fc7b29 100644
+index eaf77c34e6..4fc7b29b9a 100644
 --- a/subprojects/gst-plugins-bad/ext/dtls/gstdtlsconnection.c
 +++ b/subprojects/gst-plugins-bad/ext/dtls/gstdtlsconnection.c
 @@ -1114,16 +1114,29 @@ openssl_verify_callback (int preverify_ok, X509_STORE_CTX * x509_ctx)

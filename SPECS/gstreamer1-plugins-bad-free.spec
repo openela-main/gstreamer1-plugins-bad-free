@@ -26,7 +26,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.26.7
-Release:        2%{?dist}.7
+Release:        9%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -45,23 +45,22 @@ Patch:          0001-dvbsuboverlay-Mark-parsed-byte-array-as-const.patch
 Patch:          0002-dvbsuboverlay-Add-missing-bounds-checks-to-the-parse.patch
 Patch:          0003-dvbsuboverlay-Avoid-integer-overflows-and-unreasonab.patch
 Patch:          0004-libs-jpegparser-boundary-checks-before-copying-it.patch
-# CVE-2026-52720
-# https://github.com/GStreamer/gstreamer/commit/1ca88138fb0f8562861956b66a0c98406bcb7370
-Patch:          0005-librfb-Validate-framebuffer-update-rectangles-agains.patch
-# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11877
-# https://github.com/GStreamer/gstreamer/commit/d30966b87f3a1358b01ec404607f6c9b2f10e9f7
-Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-52722.patch
-# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11805
-Patch:          0005-vajpegdecoder-Validate-that-enough-data-is-available.patch
-# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11803
-Patch:          0005-av1parser-Fix-bytes-bits-confusion-when-parsing-tile.patch
-# CVE-2026-59691
+# https://issues.redhat.com/browse/RHEL-184463
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/1ca88138fb0f8562861956b66a0c98406bcb7370
+Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-52720.patch
+# https://issues.redhat.com/browse/RHEL-193549
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12054
 Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-59691.patch
-# CVE-2026-59692
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12053
-Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-59692.patch
-# CVE-2026-19387
+Patch:          0005-dtlsconnection-Allocate-large-enough-buffer-for-the-.patch
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11869
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/6c146775d784bbe91ff7afc6701ba351306282ce
+Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-52722.patch
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/c97cce5f187fa40d389256ce6c6da68f159bb8bd
+Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-52719.patch
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11829
+Patch:          0005-av1parser-Fix-bytes-bits-confusion-when-parsing-tile.patch
+# https://issues.redhat.com/browse/RHEL-235501
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12235
 Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-19387.patch
 
@@ -891,35 +890,37 @@ EOF
 
 
 %changelog
-* Mon Aug 10 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.7
-- Fix ADPCM decoder input validation (CVE-2026-19387)
-  Resolves: RHEL-235500
+* Tue Aug 18 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-9
+- Fix CVE-2026-19387: ADPCM decoder input validation fixes
+  Resolves: RHEL-235501
 
-* Sat Jul 11 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.5
-- Fix rfbsrc hextile and color read handling for non-32bpp
-  pixel formats (CVE-2026-59691)
-  Resolves: RHEL-193550
+* Wed Jul 29 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-8
+- Fix bytes/bits confusion in AV1 parser when parsing tile data size
+  Resolves: RHEL-184392
 
-* Tue Jun 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.4
-- Fix bytes/bits confusion in AV1 tile data size parsing (CVE-2026-52718)
-  Resolves: RHEL-184391
+* Wed Jul 29 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-7
+- Fix CVE-2026-52719: out-of-bounds read in VA JPEG decoder
+  Resolves: RHEL-184407
 
-* Mon Jun 22 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.3
-- Fix for CVE-2026-52719
-  Resolves: RHEL-184406
+* Wed Jul 29 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-6
+- Fix integer overflows in vmnc decoder (CVE-2026-52722)
+  Resolves: RHEL-184427
 
-* Fri Jun 19 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.2
-- Fix integer overflows in VMnc decoder (CVE-2026-52722)
-  Resolves: RHEL-184425
+* Wed Jul 29 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-5
+- Fix CVE-2026-59692: DTLS connection buffer overflow in certificate DN
+  Resolves: RHEL-193566
 
-* Fri Jun 19 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-2.1
-- Fix for CVE-2026-52720: validate framebuffer update rectangles
-  in VNC source plugin's RFB decoder
-  Resolves: RHEL-184462
+* Wed Jul 29 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-4
+- Fix CVE-2026-59691: rfbsrc bpp handling in hextile and color reads
+  Resolves: RHEL-193549
+
+* Wed Jul 29 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-3
+- Fix for CVE-2026-52720 in librfb plugin
+  Resolves: RHEL-184463
 
 * Tue Mar 31 2026 Wim Taymans <wtaymans@redhat.com> - 1.26.7-2
 - Add patches for CVE-2026-2923 and CVE-2026-3082
-  Resolves: RHEL-156114, RHEL-156172
+  Resolves: RHEL-156118, RHEL-156189
 
 * Tue Nov 04 2025 Wim Taymans <wtaymans@redhat.com> - 1.26.7-1
 - Update to 1.26.7

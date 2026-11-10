@@ -1,4 +1,4 @@
-From 41d5cf78bdcd4f8bbbcbb85cc3c0bc3e5ef05dbb Mon Sep 17 00:00:00 2001
+From 83b1767d40098f955e166e29b27b7047354e5661 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Sebastian=20Dr=C3=B6ge?= <sebastian@centricular.com>
 Date: Tue, 9 Jun 2026 09:26:38 +0300
 Subject: [PATCH] av1parser: Fix bytes/bits confusion when parsing tile data
@@ -10,13 +10,13 @@ Patch provided by Junyi Liu, who also reported this.
 
 Fixes https://gitlab.freedesktop.org/gstreamer/gstreamer/-/work_items/5103
 
-Part-of: <https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11803>
+Part-of: <https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11829>
 ---
- subprojects/gst-plugins-bad/gst-libs/gst/codecparsers/gstav1parser.c | 6 ++++--
+ .../gst-libs/gst/codecparsers/gstav1parser.c                | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/subprojects/gst-plugins-bad/gst-libs/gst/codecparsers/gstav1parser.c b/subprojects/gst-plugins-bad/gst-libs/gst/codecparsers/gstav1parser.c
-index e2caf91..cf2d860 100644
+index e2caf91c2d..cf2d860760 100644
 --- a/subprojects/gst-plugins-bad/gst-libs/gst/codecparsers/gstav1parser.c
 +++ b/subprojects/gst-plugins-bad/gst-libs/gst/codecparsers/gstav1parser.c
 @@ -4339,6 +4339,8 @@ gst_av1_parser_parse_tile_list_obu (GstAV1Parser * parser,
@@ -39,6 +39,3 @@ index e2caf91..cf2d860 100644
        retval = GST_AV1_PARSER_NO_MORE_DATA;
        goto error;
      }
--- 
-2.52.0
-
