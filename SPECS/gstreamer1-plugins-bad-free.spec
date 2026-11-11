@@ -26,7 +26,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.26.7
-Release:        9%{?dist}
+Release:        9%{?dist}.1
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -63,6 +63,9 @@ Patch:          0005-av1parser-Fix-bytes-bits-confusion-when-parsing-tile.patch
 # https://issues.redhat.com/browse/RHEL-235501
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12235
 Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-19387.patch
+# https://issues.redhat.com/browse/RHEL-297930
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11241
+Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-119777.patch
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -890,6 +893,10 @@ EOF
 
 
 %changelog
+* Sat Oct 31 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-9.1
+- CVE-2026-119777 gstreamer1-plugins-bad-free: gstreamer1-plugins-bad-free: stack buffer overflow in H.266/VVC parser
+  Resolves: RHEL-297930
+
 * Tue Aug 18 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-9
 - Fix CVE-2026-19387: ADPCM decoder input validation fixes
   Resolves: RHEL-235501
