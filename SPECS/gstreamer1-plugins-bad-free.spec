@@ -12,7 +12,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.22.12
-Release:        14%{?dist}
+Release:        15%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -56,6 +56,9 @@ Patch:          0005-av1parser-Fix-bytes-bits-confusion-when-parsing-tile.patch
 # https://issues.redhat.com/browse/RHEL-235498
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12235
 Patch:          gstreamer1-plugins-bad-free-1.22.12-CVE-2026-19387.patch
+# https://issues.redhat.com/browse/RHEL-305840
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/6df5cf3519c784cf062bb437c75a96c13e6e40c8
+Patch:          gstreamer1-plugins-bad-free-1.22.12-CVE-2026-125707.patch
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -800,6 +803,9 @@ rm $RPM_BUILD_ROOT%{_bindir}/playout
 
 
 %changelog
+* Thu Nov 12 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.22.12-15
+- CVE-2026-125707 gstreamer1-plugins-bad-free: gst-plugins-bad: off-by-one write in MXF demuxer temporal offset table
+
 * Tue Aug 18 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.22.12-14
 - Fix ADPCM decoder negotiation and input size check (CVE-2026-19387)
 
