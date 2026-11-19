@@ -26,7 +26,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.26.7
-Release:        9%{?dist}.1
+Release:        9%{?dist}.2
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -66,6 +66,9 @@ Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-19387.patch
 # https://issues.redhat.com/browse/RHEL-297930
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11241
 Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-119777.patch
+# https://issues.redhat.com/browse/RHEL-305823
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11582
+Patch:          gstreamer1-plugins-bad-free-1.26.7-CVE-2026-125707.patch
 
 BuildRequires:  meson >= 0.48.0
 BuildRequires:  gcc-c++
@@ -893,6 +896,10 @@ EOF
 
 
 %changelog
+* Thu Nov 12 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-9.2
+- CVE-2026-125707 gstreamer1-plugins-bad-free: gst-plugins-bad: off-by-one write in MXF demuxer temporal offset table
+  Resolves: RHEL-305823
+
 * Sat Oct 31 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.26.7-9.1
 - CVE-2026-119777 gstreamer1-plugins-bad-free: gstreamer1-plugins-bad-free: stack buffer overflow in H.266/VVC parser
   Resolves: RHEL-297930
