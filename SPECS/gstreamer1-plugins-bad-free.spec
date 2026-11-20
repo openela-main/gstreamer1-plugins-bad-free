@@ -14,7 +14,7 @@
 
 Name:           gstreamer1-plugins-bad-free
 Version:        1.16.1
-Release:        9%{?gitcommit:.git%{shortcommit}}%{?dist}.2
+Release:        10%{?gitcommit:.git%{shortcommit}}%{?dist}
 Summary:        GStreamer streaming media framework "bad" plugins
 
 License:        LGPLv2+ and LGPLv2
@@ -51,6 +51,9 @@ Patch9:         0001-dtlsconnection-CVE-2026-59692.patch
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/5448745c4c892be67ff710e928c69cfd9ef8a2e8
 # https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/5903987091bb25e4f549331032cd2e3494cf8dae
 Patch10:        0001-adpcmdec-CVE-2026-19387.patch
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11582
+# https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/6df5cf3519c784cf062bb437c75a96c13e6e40c8
+Patch11:        0001-mxfdemux-CVE-2026-125707.patch
 
 BuildRequires:  gstreamer1-devel >= %{version}
 BuildRequires:  gstreamer1-plugins-base-devel >= %{version}
@@ -214,6 +217,7 @@ aren't tested well enough, or the code is not of good enough quality.
 %patch8 -p1
 %patch9 -p1
 %patch10 -p1
+%patch11 -p1
 
 %build
 %configure --disable-silent-rules --disable-fatal-warnings \
@@ -502,6 +506,10 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -fv {} ';'
 
 
 %changelog
+* Thu Nov 12 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.16.1-10
+- CVE-2026-125707 gstreamer1-plugins-bad-free: gst-plugins-bad: off-by-one write in MXF demuxer temporal offset table
+  Resolves: RHEL-305828
+
 * Mon Aug 10 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 1.16.1-9.2
 - Fix IMA ADPCM input size check in adpcmdec (CVE-2026-19387)
   Resolves: RHEL-235503
